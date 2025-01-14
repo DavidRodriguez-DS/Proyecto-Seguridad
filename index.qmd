@@ -40,12 +40,14 @@ renv::snapshot(prompt = TRUE)
 #Leemos nuestras BBDD
 
 #ENUSC 2023
-enusc <- read_sav("C:/Users/drodr/OneDrive/Documentos/Academia/UDP/Diplomado Data Science/Capstone/Proyecto ENUSC/Proyecto-Seguridad/_data/base-usuario-20-enusc-2023bf436364553a489fab8e92a1ef14a520.sav")
+url <- "https://www.ine.gob.cl/docs/default-source/seguridad-ciudadana/bbdd/2023/base-usuario-20-enusc-2023bf436364553a489fab8e92a1ef14a520.sav?sfvrsn=473ce20c_6&download=true"
+
+enusc <- import(url)
 
 #CASEN 2022
-casen <- read_sav("C:/Users/drodr/OneDrive/Documentos/Academia/UDP/Diplomado Data Science/Capstone/Proyecto ENUSC/Proyecto-Seguridad/_data/Base de datos Casen 2022 SPSS 18 marzo 2024.sav")
+#casen <- read_sav("C:/Users/drodr/OneDrive/Documentos/Academia/UDP/Diplomado Data Science/Capstone/Proyecto ENUSC/Proyecto-Seguridad/_data/Base de datos Casen 2022 SPSS 18 marzo 2024.sav")
 
-#Dejamos casen cargada no obstante no la utilizamos aún ya que, al parecer, no hay ninguna llave que nos permita unir ambas bbdd
+#Dejamos codigo de casen cargado. No obstante no la utilizamos aún ya que, al parecer, no hay ninguna llave que nos permita unir ambas bbdd
 
 enusc_reducida <- enusc %>% select(rph_ID, idhogar, enc_idr, enc_region, enc_rpc, com102, rph_numeroLinea, rph_numHogar, rph_edad, rph_sexo, rph_idgen, Kish, Hogar_Kish, rph_pertenencia_indigena, rph_nacionalidad, rph_nivel, rph_situacion_laboral_a, rph_situacion_laboral_b, rph_categoria_ocupacional, rph_ciuo, rph_nse, P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO, P_FUENTE_INFO_PAIS_1, P_FUENTE_INFO_COM_1, P_INSEG_LUGARES_1, P_INSEG_LUGARES_2, P_INSEG_LUGARES_3, P_INSEG_LUGARES_4, P_INSEG_LUGARES_5, P_INSEG_LUGARES_6, P_INSEG_LUGARES_7, P_INSEG_LUGARES_8, P_INSEG_LUGARES_9, P_INSEG_LUGARES_10, P_INSEG_LUGARES_11, P_INSEG_LUGARES_12, P_INSEG_LUGARES_13, P_INSEG_LUGARES_14, P_INSEG_LUGARES_15, P_INSEG_LUGARES_16, P_INSEG_OSCURO_1, P_INSEG_DIA_1, P_INSEG_OSCURO_2, P_INSEG_DIA_2, PAD, PADC, PADB, PCOS, Fact_Pers_Com, Fact_Pers_Reg, Fact_Pers_Regional_102, Fact_Hog_Com, Fact_Hog_Reg, Fact_Hog_Regional_102, VarStrat, Conglomerado)
 
