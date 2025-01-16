@@ -36,6 +36,7 @@ invisible(capture.output(sapply(packages, install_and_load)))
 
 renv::snapshot(prompt = TRUE)
 ```
+
 ```{r}
 #Leemos nuestras BBDD
 
@@ -78,9 +79,93 @@ enusc_reducida <- enusc_reducida %>% mutate(indice_percepcion = round(rowMeans(s
 
 enusc_reducida <- enusc_reducida %>%
   mutate_all(~ifelse(. %in% "NaN", NA, .))
+```
 
-renv::snapshot()
+#Arbol de clasificación
+
+```{r}
+#Instalamos paquetes para ejecutar arbol de clasificación en torno a nuestro índice de percepción de inseguridad
+
+if(!require(PracTools)){install.packages("PracTools")}
+if(!require(paramtest)){install.packages("paramtest")}
+if(!require(tidyverse)){install.packages("tidyverse")}
+if(!require(rpart)){install.packages("rpart")}
+if(!require(rpart.plot)){install.packages("rpart.plot")}
+if(!require(janitor)){install.packages("janitor")}
+if(!require(caret)){install.packages("caret")}
+if(!require(rlang)){install.packages("rlang")}
+library(rpart.plot)
+library(janitor)
+library(caret)
+library(rlang)
+
+# Configuración de control
+control <- rpart.control(minbucket = 50, cp = 0)
+
+# Entrenamiento del modelo
+set.seed(123)
+modelo_arbol <- rpart(indice_inseguridad ~ rph_sexo + rph_nivel + rph_nse + rph_situacion_laboral_a,
+                      method = "class",
+                      control = control,
+                      data = enusc_reducida)
+
+# Resumen del modelo
+printcp(modelo_arbol)
+summary(modelo_arbol)
+
+# Visualización del árbol
+# Configuración de parámetros comunes
+common_args <- list(
+  main = "Árbol para Índice de Percepción de la Inseguridad en ENUSC",
+  extra = 106,
+  nn = TRUE,
+  fallen.leaves = TRUE,
+  branch = 0.5,
+  faclen = 0,
+  trace = 1,
+  shadow.col = "gray",
+  branch.lty = 1,
+  branch.type = 5,
+  split.cex = 1.2,
+  split.prefix = "is ",
+  split.suffix = "?",
+  split.box.col = "lightgray",
+  split.border.col = "darkgray",
+  split.round = 0.5
+)
+
+# Visualización del árbol con do.call
+cols <- ifelse(modelo_arbol$frame$yval == 1, "gray50", "black")
+do.call(prp, c(list(x = modelo_arbol, col = cols, border.col = cols), common_args))
+
+```
+
+#Random Forest (no carga de momento)
+
+```{r}
+#if(!require(party)){install.packages("party")}
+#library(party)
+
+# Eliminar filas con NA en 'indice_inseguridad'
+#enusc_reducida_limpia <- #enusc_reducida[!is.na(enusc_reducida$indice_inseguridad), ]
+
+# Verificar que ya no haya valores faltantes
+#sum(is.na(enusc_reducida_limpia$indice_inseguridad)) # Debería ser 0
+
+# Entrenar el modelo con el conjunto de datos limpio
+#crf.enusc <- cforest(as.factor(indice_inseguridad) ~ rph_edad + 
+#                       as.factor(rph_sexo) + 
+#                       as.factor(rph_nivel) + 
+#                       as.factor(rph_nse),
+#                     controls = cforest_control(ntree = 50,
+#                                                mtry = 4,
+#                                                mincriterion = qnorm(0.8),
+#                                                trace = TRUE),
+#                     data = enusc_reducida_limpia)
 
 
 ```
 
+```{r}
+renv::snapshot()
+```
