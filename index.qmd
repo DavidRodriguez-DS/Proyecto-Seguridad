@@ -175,8 +175,11 @@ print(modelo_rf)
 
 # Importancia de las variables
 varImpPlot(modelo_rf, main = "Importancia de las Variables")
+```
 
+#Random Forest con Paquete Party
 
+```{r modelo-cforest, eval=FALSE}
 # Instalamos y cargamos el paquete necesario
 if(!require(party)){install.packages("party")}
 library(party)
@@ -217,12 +220,29 @@ barplot(varimp, main = "Importancia de Variables", col = "steelblue")
 
 saveRDS(crf.enusc_sub, file = "cforest_model_inseguridad.rds")
 
-# Cargar el modelo
+#Guardamos RData
+save.image(file = "entorno_randomforest.RData")
+```
+
+
+```{r}
+# Instalamos y cargamos el paquete necesario
+if(!require(party)){install.packages("party")}
+library(party)
+
+# Cargamos el modelo
 loaded_cforest <- readRDS("cforest_model_inseguridad.rds")
 
-#Guardamos RData
+# Volvemos a graficar la importancia de las variables
+varimp <- varimp(loaded_cforest)
 
-save.image(file = "entorno_randomforest.RData")
+#Estadisticos de la predicción con 5000 observaciones
+
+print(varimp)
+
+#Graficamos
+
+barplot(sort(varimp), main = "Importancia de variables", col = "steelblue")
 
 ```
 
