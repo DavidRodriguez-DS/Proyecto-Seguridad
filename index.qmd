@@ -10,6 +10,8 @@ library(renv)
 
 renv::init()
 
+#Hola Hola Hola
+
 # Lista de paquetes a ser instalados y cargados
 
 packages <- c("rio", "dplyr", "ggplot2", "RColorBrewer", "kableExtra", "Rcpp", "ggcorrplot", "latex2exp","broom", "knitr", "haven")
@@ -223,7 +225,6 @@ saveRDS(crf.enusc_sub, file = "cforest_model_inseguridad.rds")
 #Guardamos RData
 save.image(file = "entorno_randomforest.RData")
 ```
-
 
 ```{r}
 # Instalamos y cargamos el paquete necesario
