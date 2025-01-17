@@ -10,8 +10,6 @@ library(renv)
 
 renv::init()
 
-#Hola Hola Hola
-
 # Lista de paquetes a ser instalados y cargados
 
 packages <- c("rio", "dplyr", "ggplot2", "RColorBrewer", "kableExtra", "Rcpp", "ggcorrplot", "latex2exp","broom", "knitr", "haven")
@@ -54,37 +52,57 @@ casen <- import(url_casen)
 
 #Dejamos bbdd casen cargada. No obstante no la utilizamos aún ya que, al parecer, no hay ninguna llave que nos permita unir ambas bbdd
 
-enusc2023_reducida <- enusc2023 %>% select(rph_ID, idhogar, enc_idr, enc_region, enc_rpc, com102, rph_numeroLinea, rph_numHogar, rph_edad, rph_sexo, rph_idgen, Kish, Hogar_Kish, rph_pertenencia_indigena, rph_nacionalidad, rph_nivel, rph_situacion_laboral_a, rph_situacion_laboral_b, rph_categoria_ocupacional, rph_ciuo, rph_nse, P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO, P_FUENTE_INFO_PAIS_1, P_FUENTE_INFO_COM_1, P_INSEG_LUGARES_1, P_INSEG_LUGARES_2, P_INSEG_LUGARES_3, P_INSEG_LUGARES_4, P_INSEG_LUGARES_5, P_INSEG_LUGARES_6, P_INSEG_LUGARES_7, P_INSEG_LUGARES_8, P_INSEG_LUGARES_9, P_INSEG_LUGARES_10, P_INSEG_LUGARES_11, P_INSEG_LUGARES_12, P_INSEG_LUGARES_13, P_INSEG_LUGARES_14, P_INSEG_LUGARES_15, P_INSEG_LUGARES_16, P_INSEG_OSCURO_1, P_INSEG_DIA_1, P_INSEG_OSCURO_2, P_INSEG_DIA_2, PAD, PADC, PADB, PCOS, Fact_Pers_Com, Fact_Pers_Reg, Fact_Pers_Regional_102, Fact_Hog_Com, Fact_Hog_Reg, Fact_Hog_Regional_102, VarStrat, Conglomerado)
+enusc_reducida <- enusc2023 %>% select(rph_ID, idhogar, enc_idr, enc_region, enc_rpc, rph_numHogar, rph_edad, rph_sexo, rph_idgen, Kish, Hogar_Kish, rph_pertenencia_indigena, rph_nacionalidad, rph_nivel, rph_situacion_laboral_a, rph_categoria_ocupacional, rph_nse, P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO, P_INSEG_LUGARES_1, P_INSEG_LUGARES_2, P_INSEG_LUGARES_3, P_INSEG_LUGARES_4, P_INSEG_LUGARES_5, P_INSEG_LUGARES_6, P_INSEG_LUGARES_7, P_INSEG_LUGARES_8, P_INSEG_LUGARES_9, P_INSEG_LUGARES_10, P_INSEG_LUGARES_11, P_INSEG_LUGARES_12, P_INSEG_LUGARES_13, P_INSEG_LUGARES_14, P_INSEG_LUGARES_15, P_INSEG_LUGARES_16, P_INSEG_OSCURO_1, P_INSEG_DIA_1, P_INSEG_OSCURO_2, P_INSEG_DIA_2, Fact_Pers_Com, Fact_Pers_Reg, Fact_Pers_Regional_102, Fact_Hog_Com, Fact_Hog_Reg, Fact_Hog_Regional_102, VarStrat, Conglomerado)
 
 #Filtramos por Kish = 1 nuestra bbdd
 
-enusc2023_reducida <- enusc2023_reducida %>% filter(Kish==1)
+enusc_reducida <- enusc_reducida %>% filter(Kish==1)
 
 #Transformamos los NS/NR de las variables a utilizar
 
-enusc2023_reducida <- enusc2023_reducida %>%
-  mutate_all(~ifelse(. %in% c(-88, -99, 85), NA, .))
+enusc_reducida <- enusc_reducida %>%
+  mutate_all(~ifelse(. %in% c(88, 94, 99, 85), NA, .))
 
 #Invertimos la respuesta de las variables sobre inseguridad para asentar su respuesta:
 
-enusc2023_reducida <- enusc2023_reducida %>% mutate(across(c("P_INSEG_LUGARES_1", "P_INSEG_LUGARES_2", "P_INSEG_LUGARES_3", "P_INSEG_LUGARES_4", 
-                                   "P_INSEG_LUGARES_5", "P_INSEG_LUGARES_6", "P_INSEG_LUGARES_7", "P_INSEG_LUGARES_8", 
-                                   "P_INSEG_LUGARES_9", "P_INSEG_LUGARES_10", "P_INSEG_LUGARES_11", "P_INSEG_LUGARES_12", 
-                                   "P_INSEG_LUGARES_13", "P_INSEG_LUGARES_14", "P_INSEG_LUGARES_15", "P_INSEG_LUGARES_16", 
-                                   "P_INSEG_OSCURO_1", "P_INSEG_DIA_1", "P_INSEG_OSCURO_2", "P_INSEG_DIA_2"), ~ 5 - .))
+enusc_reducida <- enusc_reducida %>% mutate(across(c("P_INSEG_LUGARES_1", "P_INSEG_LUGARES_2", "P_INSEG_LUGARES_3", "P_INSEG_LUGARES_4", 
+                                                             "P_INSEG_LUGARES_5", "P_INSEG_LUGARES_6", "P_INSEG_LUGARES_7", "P_INSEG_LUGARES_8", 
+                                                             "P_INSEG_LUGARES_9", "P_INSEG_LUGARES_10", "P_INSEG_LUGARES_11", "P_INSEG_LUGARES_12", 
+                                                             "P_INSEG_LUGARES_13", "P_INSEG_LUGARES_14", "P_INSEG_LUGARES_15", "P_INSEG_LUGARES_16", 
+                                                             "P_INSEG_OSCURO_1", "P_INSEG_DIA_1", "P_INSEG_OSCURO_2", "P_INSEG_DIA_2"), ~ 5 - .))
 
 
-#Creamos un indice de inseguridad y de percepción:
 
-enusc2023_reducida <- enusc2023_reducida %>%
-  mutate(indice_inseguridad = round(rowMeans(select(., P_INSEG_LUGARES_1:P_INSEG_LUGARES_16, P_INSEG_OSCURO_1:P_INSEG_DIA_2), na.rm = TRUE), 3))
+# --- 2. ANÁLISIS DESCRIPTIVO ---
 
-enusc2023_reducida <- enusc2023_reducida %>% mutate(indice_percepcion = round(rowMeans(select(., P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO), na.rm = TRUE), 3))
+# SACAR NA, NS/NR DE AMBAS BBDD
 
-#Vemos que nuestras variables tienen NA al mínimo
 
-sum(is.na(enusc2023_reducida$indice_percepcion))
-sum(is.na(enusc2023_reducida$indice_inseguridad))
+enusc_inseguridad = subset(enusc_reducida, select = c(P_INSEG_LUGARES_1, P_INSEG_LUGARES_2, P_INSEG_LUGARES_3, P_INSEG_LUGARES_4, P_INSEG_LUGARES_5, P_INSEG_LUGARES_6, P_INSEG_LUGARES_7, P_INSEG_LUGARES_8, P_INSEG_LUGARES_9, P_INSEG_LUGARES_10, P_INSEG_LUGARES_11, P_INSEG_LUGARES_12, P_INSEG_LUGARES_13, P_INSEG_LUGARES_14, P_INSEG_LUGARES_15, P_INSEG_LUGARES_16, P_INSEG_OSCURO_1, P_INSEG_DIA_1, P_INSEG_OSCURO_2, P_INSEG_DIA_2))
+
+enusc_sociodemo = subset(enusc_reducida, select = c(rph_pertenencia_indigena, rph_nacionalidad, rph_nivel, rph_situacion_laboral_a, rph_categoria_ocupacional, rph_nse))
+
+# Estadísticos descriptivos para 'enusc_inseguridad'
+summary(enusc_inseguridad)
+
+# Usando la función 'describe' del paquete psych para un análisis más detallado
+psych::describe(enusc_inseguridad)
+
+# Estadísticos descriptivos para 'enusc_sociodemo'
+summary(enusc_sociodemo)
+
+# Usando la función 'describe' del paquete psych para un análisis más detallado
+psych::describe(enusc_sociodemo)
+
+# Visualizamos histogramas para cada variable de inseguridad
+enusc_inseguridad %>% 
+  pivot_longer(cols = everything(), names_to = "variable", values_to = "valor") %>% 
+  ggplot(aes(x = valor)) + 
+  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") + 
+  facet_wrap(~variable, scales = "free") + 
+  theme_minimal() + 
+  labs(title = "Distribución de las variables de inseguridad", x = "Respuesta", y = "Frecuencia")
+
 ```
 
 #Arbol de clasificación
