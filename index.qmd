@@ -43,7 +43,7 @@ renv::snapshot(prompt = TRUE)
 #ENUSC 2023
 url_enusc <- "https://www.ine.gob.cl/docs/default-source/seguridad-ciudadana/bbdd/2023/base-usuario-20-enusc-2023bf436364553a489fab8e92a1ef14a520.sav?sfvrsn=473ce20c_6&download=true"
 
-enusc <- import(url_enusc)
+enusc2023 <- import(url_enusc)
 
 #CASEN 2022
 url_casen <- "https://observatorio.ministeriodesarrollosocial.gob.cl/storage/docs/casen/2022/Base%20de%20datos%20Casen%202022%20SPSS_18%20marzo%202024.sav.zip"
@@ -52,33 +52,37 @@ casen <- import(url_casen)
 
 #Dejamos bbdd casen cargada. No obstante no la utilizamos aún ya que, al parecer, no hay ninguna llave que nos permita unir ambas bbdd
 
-enusc_reducida <- enusc %>% select(rph_ID, idhogar, enc_idr, enc_region, enc_rpc, com102, rph_numeroLinea, rph_numHogar, rph_edad, rph_sexo, rph_idgen, Kish, Hogar_Kish, rph_pertenencia_indigena, rph_nacionalidad, rph_nivel, rph_situacion_laboral_a, rph_situacion_laboral_b, rph_categoria_ocupacional, rph_ciuo, rph_nse, P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO, P_FUENTE_INFO_PAIS_1, P_FUENTE_INFO_COM_1, P_INSEG_LUGARES_1, P_INSEG_LUGARES_2, P_INSEG_LUGARES_3, P_INSEG_LUGARES_4, P_INSEG_LUGARES_5, P_INSEG_LUGARES_6, P_INSEG_LUGARES_7, P_INSEG_LUGARES_8, P_INSEG_LUGARES_9, P_INSEG_LUGARES_10, P_INSEG_LUGARES_11, P_INSEG_LUGARES_12, P_INSEG_LUGARES_13, P_INSEG_LUGARES_14, P_INSEG_LUGARES_15, P_INSEG_LUGARES_16, P_INSEG_OSCURO_1, P_INSEG_DIA_1, P_INSEG_OSCURO_2, P_INSEG_DIA_2, PAD, PADC, PADB, PCOS, Fact_Pers_Com, Fact_Pers_Reg, Fact_Pers_Regional_102, Fact_Hog_Com, Fact_Hog_Reg, Fact_Hog_Regional_102, VarStrat, Conglomerado)
+enusc2023_reducida <- enusc2023 %>% select(rph_ID, idhogar, enc_idr, enc_region, enc_rpc, com102, rph_numeroLinea, rph_numHogar, rph_edad, rph_sexo, rph_idgen, Kish, Hogar_Kish, rph_pertenencia_indigena, rph_nacionalidad, rph_nivel, rph_situacion_laboral_a, rph_situacion_laboral_b, rph_categoria_ocupacional, rph_ciuo, rph_nse, P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO, P_FUENTE_INFO_PAIS_1, P_FUENTE_INFO_COM_1, P_INSEG_LUGARES_1, P_INSEG_LUGARES_2, P_INSEG_LUGARES_3, P_INSEG_LUGARES_4, P_INSEG_LUGARES_5, P_INSEG_LUGARES_6, P_INSEG_LUGARES_7, P_INSEG_LUGARES_8, P_INSEG_LUGARES_9, P_INSEG_LUGARES_10, P_INSEG_LUGARES_11, P_INSEG_LUGARES_12, P_INSEG_LUGARES_13, P_INSEG_LUGARES_14, P_INSEG_LUGARES_15, P_INSEG_LUGARES_16, P_INSEG_OSCURO_1, P_INSEG_DIA_1, P_INSEG_OSCURO_2, P_INSEG_DIA_2, PAD, PADC, PADB, PCOS, Fact_Pers_Com, Fact_Pers_Reg, Fact_Pers_Regional_102, Fact_Hog_Com, Fact_Hog_Reg, Fact_Hog_Regional_102, VarStrat, Conglomerado)
 
-#Eliminamos los NS/NR de las variables a utilizar
+#Filtramos por Kish = 1 nuestra bbdd
 
-enusc_reducida <- enusc_reducida %>%
+enusc2023_reducida <- enusc2023_reducida %>% filter(Kish==1)
+
+#Transformamos los NS/NR de las variables a utilizar
+
+enusc2023_reducida <- enusc2023_reducida %>%
   mutate_all(~ifelse(. %in% c(-88, -99, 85), NA, .))
 
 #Invertimos la respuesta de las variables sobre inseguridad para asentar su respuesta:
 
-enusc_reducida <- enusc_reducida %>% mutate(across(c("P_INSEG_LUGARES_1", "P_INSEG_LUGARES_2", "P_INSEG_LUGARES_3", "P_INSEG_LUGARES_4", 
+enusc2023_reducida <- enusc2023_reducida %>% mutate(across(c("P_INSEG_LUGARES_1", "P_INSEG_LUGARES_2", "P_INSEG_LUGARES_3", "P_INSEG_LUGARES_4", 
                                    "P_INSEG_LUGARES_5", "P_INSEG_LUGARES_6", "P_INSEG_LUGARES_7", "P_INSEG_LUGARES_8", 
                                    "P_INSEG_LUGARES_9", "P_INSEG_LUGARES_10", "P_INSEG_LUGARES_11", "P_INSEG_LUGARES_12", 
                                    "P_INSEG_LUGARES_13", "P_INSEG_LUGARES_14", "P_INSEG_LUGARES_15", "P_INSEG_LUGARES_16", 
                                    "P_INSEG_OSCURO_1", "P_INSEG_DIA_1", "P_INSEG_OSCURO_2", "P_INSEG_DIA_2"), ~ 5 - .))
 
 
-#Creamos un indice de inseguridad:
+#Creamos un indice de inseguridad y de percepción:
 
-enusc_reducida <- enusc_reducida %>%
+enusc2023_reducida <- enusc2023_reducida %>%
   mutate(indice_inseguridad = round(rowMeans(select(., P_INSEG_LUGARES_1:P_INSEG_LUGARES_16, P_INSEG_OSCURO_1:P_INSEG_DIA_2), na.rm = TRUE), 3))
 
-enusc_reducida <- enusc_reducida %>% mutate(indice_percepcion = round(rowMeans(select(., P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO), na.rm = TRUE), 3))
+enusc2023_reducida <- enusc2023_reducida %>% mutate(indice_percepcion = round(rowMeans(select(., P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO), na.rm = TRUE), 3))
 
-#Transformamos promedios de filas completamente NA que dieron como resultados "NaN" como NA
+#Vemos que nuestras variables tienen NA al mínimo
 
-enusc_reducida <- enusc_reducida %>%
-  mutate_all(~ifelse(. %in% "NaN", NA, .))
+sum(is.na(enusc2023_reducida$indice_percepcion))
+sum(is.na(enusc2023_reducida$indice_inseguridad))
 ```
 
 #Arbol de clasificación
@@ -99,22 +103,23 @@ library(janitor)
 library(caret)
 library(rlang)
 
-# Configuración de control
+# Hacemos una configuración de control
 control <- rpart.control(minbucket = 50, cp = 0)
 
-# Entrenamiento del modelo
+# Entrenamos el modelo 
 set.seed(123)
 modelo_arbol <- rpart(indice_inseguridad ~ rph_sexo + rph_nivel + rph_nse + rph_situacion_laboral_a,
                       method = "class",
                       control = control,
-                      data = enusc_reducida)
+                      data = enusc2023_reducida)
 
 # Resumen del modelo
 printcp(modelo_arbol)
 summary(modelo_arbol)
 
 # Visualización del árbol
-# Configuración de parámetros comunes
+
+# Configuramos los parámetros comunes
 common_args <- list(
   main = "Árbol para Índice de Percepción de la Inseguridad en ENUSC",
   extra = 106,
@@ -134,7 +139,7 @@ common_args <- list(
   split.round = 0.5
 )
 
-# Visualización del árbol con do.call
+# Visualizamos el arbol de clasificación
 cols <- ifelse(modelo_arbol$frame$yval == 1, "gray50", "black")
 do.call(prp, c(list(x = modelo_arbol, col = cols, border.col = cols), common_args))
 
@@ -143,26 +148,81 @@ do.call(prp, c(list(x = modelo_arbol, col = cols, border.col = cols), common_arg
 #Random Forest (no carga de momento)
 
 ```{r}
-#if(!require(party)){install.packages("party")}
-#library(party)
+# Instalamos y cargamos los paquetes necesarios
+if(!require(randomForest)){install.packages("randomForest")}
+if(!require(tidyverse)){install.packages("tidyverse")}
+if(!require(janitor)){install.packages("janitor")}
+library(randomForest)
+library(tidyverse)
+library(janitor)
 
-# Eliminar filas con NA en 'indice_inseguridad'
-#enusc_reducida_limpia <- #enusc_reducida[!is.na(enusc_reducida$indice_inseguridad), ]
+# Configuramos el modelo Random Forest
+set.seed(123)
 
-# Verificar que ya no haya valores faltantes
-#sum(is.na(enusc_reducida_limpia$indice_inseguridad)) # Debería ser 0
+modelo_rf <- randomForest(as.factor(indice_inseguridad) ~ rph_sexo + 
+                            rph_nivel + 
+                            rph_nse + 
+                            rph_situacion_laboral_a,
+                          data = enusc2023_reducida,
+                          ntree = 50,         # Número conservador de árboles
+                          mtry = 2,           # Número de variables usadas en cada división
+                          maxnodes = 20,      # Máximo de nodos terminales para limitar la complejidad
+                          nodesize = 50,      # Número mínimo de observaciones por nodo hoja
+                          importance = TRUE)  # Para evaluar la importancia de las variables
 
-# Entrenar el modelo con el conjunto de datos limpio
-#crf.enusc <- cforest(as.factor(indice_inseguridad) ~ rph_edad + 
-#                       as.factor(rph_sexo) + 
-#                       as.factor(rph_nivel) + 
-#                       as.factor(rph_nse),
-#                     controls = cforest_control(ntree = 50,
-#                                                mtry = 4,
-#                                                mincriterion = qnorm(0.8),
-#                                                trace = TRUE),
-#                     data = enusc_reducida_limpia)
+# Resumen del modelo
+print(modelo_rf)
 
+# Importancia de las variables
+varImpPlot(modelo_rf, main = "Importancia de las Variables")
+
+
+# Instalamos y cargamos el paquete necesario
+if(!require(party)){install.packages("party")}
+library(party)
+
+# Configuración el modelo de random forest con cforest
+set.seed(123)
+
+# Tomamos un subconjunto de 5000 observaciones como prueba
+enusc_sub <- enusc2023_reducida[1:5000, ]
+
+# Ejecutamos el modelo con el subconjunto
+crf.enusc_sub <- cforest(as.factor(indice_inseguridad) ~ as.factor(rph_sexo) + 
+                           as.factor(rph_nivel) + 
+                           as.factor(rph_nse),
+                         controls = cforest_control(
+                           ntree = 20,
+                           mtry = 2,
+                           mincriterion = 0.95,
+                           maxdepth = 4,
+                           trace = TRUE
+                         ),
+                         data = enusc_sub)
+
+# Revisamos el modelo con el subconjunto
+print(crf.enusc_sub)
+
+# Resumen del modelo
+print(crf.enusc_sub)
+
+# Importancia de las variables
+varimp <- varimp(crf.enusc_sub)  # Importancia de variables
+print(varimp)
+
+# Visualizamos la importancia de las variables
+barplot(varimp, main = "Importancia de Variables", col = "steelblue")
+
+#Guardamos nuestro modelo
+
+saveRDS(crf.enusc_sub, file = "cforest_model_inseguridad.rds")
+
+# Cargar el modelo
+loaded_cforest <- readRDS("cforest_model_inseguridad.rds")
+
+#Guardamos RData
+
+save.image(file = "entorno_randomforest.RData")
 
 ```
 
