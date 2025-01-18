@@ -508,6 +508,15 @@ ggplot(pca_cargas_long %>% filter(Componente %in% c("PC1", "PC2")),
 # Las variables P_INSEG_DIA_2 (inseguridad al estar solo/a en casa durante el día) y P_INSEG_OSCURO_2 (inseguridad al estar solo/a en casa durante la noche), tienen cargas predominantes en este componente. Además, aparecen variables relacionadas con espacios laborales y educativos, como P_INSEG_LUGARES_14 (inseguridad en el lugar de trabajo) y P_INSEG_LUGARES_15 (inseguridad en el lugar de estudio).
 
 # De tal manera, PC2 representa inseguridad en contextos donde las personas suelen sentirse más seguras, como su hogar o trabajo. Este resultado es relevante porque sugiere que, para algunos grupos, la percepción de inseguridad trasciende los espacios públicosy afecta su percepción en lugares privados o controlados. Por ello, PC2 puede denominarse "Inseguridad en Lugares Habituales".
+
+# Finalmente, procedemos a guardar nuestros componentes principales en un DF
+
+pca_scores <- predict(pca_result)
+
+# Convertimos a un DataFrame
+
+pca_scores_df <- as.data.frame(pca_scores[, 1:4])
+names(pca_scores_df) <- c("inseguridad_general", "inseguridad_habituales", "inseguridad_espera", "inseguridad_transporte")
 ```
 #Arbol de clasificación
 
