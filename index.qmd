@@ -12,7 +12,7 @@ renv::init()
 
 # Lista de paquetes a ser instalados y cargados
 
-packages <- c("rio", "dplyr", "ggplot2", "RColorBrewer", "kableExtra", "Rcpp", "ggcorrplot", "latex2exp","broom", "knitr", "haven")
+packages <- c("rio", "dplyr", "ggplot2", "RColorBrewer", "kableExtra", "Rcpp", "ggcorrplot", "latex2exp","broom", "knitr", "haven", "tidyr")
 
 # Activamos función para instalar paquetes
 
@@ -71,16 +71,13 @@ enusc_reducida <- enusc_reducida %>% mutate(across(c("P_INSEG_LUGARES_1", "P_INS
                                                              "P_INSEG_LUGARES_13", "P_INSEG_LUGARES_14", "P_INSEG_LUGARES_15", "P_INSEG_LUGARES_16", 
                                                              "P_INSEG_OSCURO_1", "P_INSEG_DIA_1", "P_INSEG_OSCURO_2", "P_INSEG_DIA_2"), ~ 5 - .))
 
-
-
 # --- 2. ANÁLISIS DESCRIPTIVO ---
 
 # SACAR NA, NS/NR DE AMBAS BBDD
 
-
 enusc_inseguridad = subset(enusc_reducida, select = c(P_INSEG_LUGARES_1, P_INSEG_LUGARES_2, P_INSEG_LUGARES_3, P_INSEG_LUGARES_4, P_INSEG_LUGARES_5, P_INSEG_LUGARES_6, P_INSEG_LUGARES_7, P_INSEG_LUGARES_8, P_INSEG_LUGARES_9, P_INSEG_LUGARES_10, P_INSEG_LUGARES_11, P_INSEG_LUGARES_12, P_INSEG_LUGARES_13, P_INSEG_LUGARES_14, P_INSEG_LUGARES_15, P_INSEG_LUGARES_16, P_INSEG_OSCURO_1, P_INSEG_DIA_1, P_INSEG_OSCURO_2, P_INSEG_DIA_2))
 
-enusc_sociodemo = subset(enusc_reducida, select = c(rph_pertenencia_indigena, rph_nacionalidad, rph_nivel, rph_situacion_laboral_a, rph_categoria_ocupacional, rph_nse))
+enusc_sociodemo = subset(enusc_reducida, select = c(rph_sexo, rph_pertenencia_indigena, rph_nacionalidad, rph_nivel, rph_situacion_laboral_a, rph_categoria_ocupacional, rph_nse))
 
 # Estadísticos descriptivos para 'enusc_inseguridad'
 summary(enusc_inseguridad)
@@ -96,13 +93,24 @@ psych::describe(enusc_sociodemo)
 
 # Visualizamos histogramas para cada variable de inseguridad
 enusc_inseguridad %>% 
-  pivot_longer(cols = everything(), names_to = "variable", values_to = "valor") %>% 
+  pivot_longer(cols = everything(), names_to = "variable", values_to = "valor") %>%
   ggplot(aes(x = valor)) + 
   geom_histogram(binwidth = 1, fill = "skyblue", color = "black") + 
   facet_wrap(~variable, scales = "free") + 
   theme_minimal() + 
   labs(title = "Distribución de las variables de inseguridad", x = "Respuesta", y = "Frecuencia")
 
+#Creamos un indice de inseguridad y de percepción:
+
+enusc_reducida <- enusc_reducida %>%
+  mutate(indice_inseguridad = round(rowMeans(select(., P_INSEG_LUGARES_1:P_INSEG_LUGARES_16, P_INSEG_OSCURO_1:P_INSEG_DIA_2), na.rm = TRUE), 3))
+
+enusc_reducida <- enusc_reducida %>% mutate(indice_percepcion = round(rowMeans(select(., P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO), na.rm = TRUE), 3))
+
+#Vemos que nuestras variables tienen NA al mínimo
+
+sum(is.na(enusc_reducida$indice_percepcion))
+sum(is.na(enusc_reducida$indice_inseguridad))
 ```
 
 #Arbol de clasificación
@@ -131,7 +139,7 @@ set.seed(123)
 modelo_arbol <- rpart(indice_inseguridad ~ rph_sexo + rph_nivel + rph_nse + rph_situacion_laboral_a,
                       method = "class",
                       control = control,
-                      data = enusc2023_reducida)
+                      data = enusc_reducida)
 
 # Resumen del modelo
 printcp(modelo_arbol)
@@ -165,8 +173,6 @@ do.call(prp, c(list(x = modelo_arbol, col = cols, border.col = cols), common_arg
 
 ```
 
-#Random Forest (no carga de momento)
-
 ```{r}
 # Instalamos y cargamos los paquetes necesarios
 if(!require(randomForest)){install.packages("randomForest")}
@@ -183,7 +189,7 @@ modelo_rf <- randomForest(as.factor(indice_inseguridad) ~ rph_sexo +
                             rph_nivel + 
                             rph_nse + 
                             rph_situacion_laboral_a,
-                          data = enusc2023_reducida,
+                          data = enusc_reducida,
                           ntree = 50,         # Número conservador de árboles
                           mtry = 2,           # Número de variables usadas en cada división
                           maxnodes = 20,      # Máximo de nodos terminales para limitar la complejidad
@@ -208,7 +214,7 @@ library(party)
 set.seed(123)
 
 # Tomamos un subconjunto de 5000 observaciones como prueba
-enusc_sub <- enusc2023_reducida[1:5000, ]
+enusc_sub <- enusc_reducida[1:5000, ]
 
 # Ejecutamos el modelo con el subconjunto
 crf.enusc_sub <- cforest(as.factor(indice_inseguridad) ~ as.factor(rph_sexo) + 
