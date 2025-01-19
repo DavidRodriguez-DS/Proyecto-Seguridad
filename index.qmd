@@ -18,7 +18,7 @@ packages <- c(
   "rio", "dplyr", "ggplot2", "RColorBrewer", "kableExtra", "Rcpp", 
   "ggcorrplot", "latex2exp", "broom", "knitr", "haven", "tidyr", 
   "PracTools", "paramtest", "tidyverse", "rpart", "rpart.plot", "janitor", 
-  "caret", "rlang", "randomForest", "party"
+  "caret", "rlang", "randomForest", "party", "ggforce"
 )
 
 # Función para instalar y cargar paquetes
@@ -42,6 +42,7 @@ invisible(capture.output(sapply(packages, install_and_load)))
 
 renv::snapshot(prompt = TRUE)
 ```
+# Análisis Descriptivo
 
 ```{r}
 # En primer lugar, cargamos las bases de datos necesarias para el desarrollo de nuestro trabajo.
@@ -112,20 +113,25 @@ summary(enusc_inseguridad)
 
 psych::describe(enusc_inseguridad)
 
-# Finalmente, se genera gráfico de barras para comparar proporciones de respuesta relativas a las personas que consideran que delincuencia disminuyó (categoría 1), se mantuvo (categoría 2) o aumentó (categoría 3), en los últimos 12 meses
+# Finalmente, se genera gráfico de barras para comparar proporciones de respuesta relativas a las personas que consideran que delincuencia disminuyó (categoría 1), se mantuvo (categoría 2) o aumentó (categoría 3), en los últimos 12 meses, considerando el barrio en que habita, su comuna y el país en general
 
 enusc_percepcion <- enusc_reducida %>%
   select(P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO) %>%
-  pivot_longer(cols = everything(), names_to = "variable", values_to = "valor")
+  pivot_longer(cols = everything(), names_to = "variable", values_to = "valor") %>%
+  filter(!is.na(valor)) %>%
+  mutate(variable = recode(variable, 
+                           P_AUMENTO_PAIS = "País",
+                           P_AUMENTO_COM = "Comuna",
+                           P_AUMENTO_BARRIO = "Barrio"))
 
 # Gráfico de barras
 ggplot(enusc_percepcion, aes(x = variable, fill = factor(valor))) +
   geom_bar(position = "fill", color = "black") +
-  scale_fill_brewer(palette = "Set2") +
-  labs(title = "Percepción de Variación de Delincuencia",
-       x = "Contexto",
+  scale_fill_brewer(palette = "Set2", labels = c("Bajó", "Se Mantuvo", "Aumentó")) +
+  labs(title = "Percepción de Variación de Delincuencia Durante los Últimos 12 Meses",
+       x = "Territorio",
        y = "Proporción",
-       fill = "Categoría") +
+       fill = "Percepción") +
   theme_minimal()
 
 
@@ -147,15 +153,42 @@ ggplot(enusc_percepcion, aes(x = variable, fill = factor(valor))) +
 
 # Visualizamos histogramas para cada variable de inseguridad
 
-enusc_inseguridad %>% 
+data_long <- enusc_inseguridad %>% 
   pivot_longer(cols = everything(), names_to = "variable", values_to = "valor") %>%
-  ggplot(aes(x = valor)) + 
-  geom_histogram(binwidth = 1, fill = "skyblue", color = "black") + 
-  facet_wrap(~variable, scales = "free") + 
-  theme_minimal() + 
-  labs(title = "Distribución de las variables de inseguridad", x = "Respuesta", y = "Frecuencia")
+  filter(!is.na(valor)) %>%
+  group_by(variable) %>%
+  mutate(total_responses = n()) %>%
+  group_by(variable, valor) %>% 
+  summarise(count = n(), total_responses = first(total_responses), .groups = 'drop') %>% 
+  mutate(percentage = count / total_responses * 100)
 
-# En base al histograma, las variables que reflejan mayor inseguridad son:
+# Definimos número de gráficos por página
+
+n_per_page <- 3
+total_pages <- ceiling(length(unique(data_long$variable)) / n_per_page)
+
+# Creando gráficos
+
+for (i in 1:total_pages) {
+  plot <- ggplot(data_long, aes(x = as.factor(valor), y = percentage)) + 
+    geom_bar(stat = "identity", fill = "skyblue", color = "black") +
+    facet_wrap_paginate(~variable, ncol = 1, nrow = n_per_page, scales = "free", page = i) +
+    labs(title = "Distribución de las variables de inseguridad", 
+         x = "Respuesta", 
+         y = "Porcentaje") +
+    theme_minimal(base_size = 12) +
+    scale_y_continuous(labels = scales::percent_format(scale = 1), limits = c(0, 100)) +
+    theme(
+      plot.title = element_text(size = 12, face = "bold"),
+      strip.text = element_text(size = 10),
+      axis.text = element_text(size = 10),
+      axis.title = element_text(size = 10)
+    )
+  
+  print(plot)
+}
+
+# En base a los histogramas y estadísticos descriptivos, las variables que reflejan mayor inseguridad son:
 
 # 1. `P_INSEG_OSCURO_1` (Media: 2.932):
 #    Representa la percepción de inseguridad al caminar solo/a por el barrio durante la noche.
@@ -353,8 +386,7 @@ print(tukey_percepcion_nivel)
 table(enusc_reducida$rph_nivel)
 prop.table(table(enusc_reducida$rph_nivel)) * 100
 
-# Finalmente, respecto a la variación de los índices construidos en base al nivel educacional, podemos indicar que
-# también existen diferencias estadísticamente significativas por grupo. Las mayores diferencias se dan entre aquellas personas que asistieron a la educación básica y la media, respecto a las personas que asistieron a la educación superior. Así, a mayor educación, se observa una tendencia a sentir menores niveles de inseguridad.
+# Finalmente, respecto a la variación de los índices construidos en base al nivel educacional, podemos indicar que también existen diferencias estadísticamente significativas por grupo. Las mayores diferencias se dan entre aquellas personas que asistieron a la educación básica y la media, respecto a las personas que asistieron a la educación superior. Así, a mayor educación, se observa una tendencia a sentir menores niveles de inseguridad.
 
 # Es importante destacar que tal tendencia no se cumple al analizar a las personas que declaran nunca haber asistido, dado que, prácticamente, no se encontraron diferencias significativas entre este y los demás grupos. Es probable que este fenómeno se deba a la baja proporción de personas que no tienen educación formal en Chile, con lo que es muy difícil que la muestra de la encuesta analizada sea capaz de capturar, de manera representativa, la realidad social de las personas 365 personas de la encuesta (menos de un 1% de la muestra), que se encuentran en tal condición.
 
@@ -518,7 +550,8 @@ pca_scores <- predict(pca_result)
 pca_scores_df <- as.data.frame(pca_scores[, 1:4])
 names(pca_scores_df) <- c("inseguridad_general", "inseguridad_habituales", "inseguridad_espera", "inseguridad_transporte")
 ```
-#Arbol de clasificación
+
+Arbol de clasificación
 
 ```{r}
 #Instalamos paquetes para ejecutar arbol de clasificación en torno a nuestro índice de percepción de inseguridad
