@@ -973,9 +973,6 @@ ggplot(data_model, aes(x = inseguridad_general, y = inseguridad_habituales, colo
 # Así, la inseguridad sería percibida de manera relativamente uniforme en distintos segmentos sociales, siendo una preocupación generalizada en el país.
 
 ```
-HASTA ACÁ VAMOS.
-
-
 
 ```{r}
 # Nombramos a los clusters
@@ -996,7 +993,7 @@ table(data_model$etiqueta_cluster)
 ggplot(data_model, aes(x = inseguridad_general, y = inseguridad_habituales, color = etiqueta_cluster)) +
   geom_point(alpha = 0.6) +
   labs(
-    title = "Clusters basados en Componentes Principales (Etiquetados Correctamente)",
+    title = "Clusters basados en Componentes Principales",
     x = "Inseguridad General", 
     y = "Inseguridad en Lugares Habituales", 
     color = "Etiqueta del Cluster"
@@ -1004,7 +1001,84 @@ ggplot(data_model, aes(x = inseguridad_general, y = inseguridad_habituales, colo
   theme_minimal()
 
 ```
+```{r}
+resumen_clusters <- data_model %>%
+  group_by(etiqueta_cluster) %>%
+  summarise(
+    promedio_inseguridad_general = mean(inseguridad_general),
+    promedio_inseguridad_habituales = mean(inseguridad_habituales),
+    cantidad_personas = n()
+  )
+print(resumen_clusters)
 
+```
+```{r}
+ggplot(data_model, aes(x = inseguridad_general, fill = etiqueta_cluster)) +
+  geom_density(alpha = 0.5) +
+  labs(
+    title = "Densidad de Inseguridad General por Cluster",
+    x = "Inseguridad General",
+    y = "Densidad",
+    fill = "Etiqueta del Cluster"
+  ) +
+  theme_minimal()
+
+```
+```{r}
+caracterizacion_clusters <- data_model %>%
+  group_by(etiqueta_cluster) %>%
+  summarise(
+    numero_observaciones = n(),
+    edad_por_categoria = mean(as.numeric(rph_edad), na.rm = TRUE),
+    hombres = mean(rph_sexo == 1, na.rm = TRUE) * 100,
+    mujeres = mean(rph_sexo == 2, na.rm = TRUE) * 100,
+    nivel_educacional_basica = mean(rph_nivel == 1, na.rm = TRUE) * 100,
+    nivel_educacional_media = mean(rph_nivel == 2, na.rm = TRUE) * 100,
+    nivel_educacional_superior = mean(rph_nivel == 3, na.rm = TRUE) * 100,
+    sin_asistencia_educacional = mean(rph_nivel == 0, na.rm = TRUE) * 100,
+    nse_bajo = mean(rph_nse == 1, na.rm = TRUE) * 100,
+    nse_medio = mean(rph_nse == 2, na.rm = TRUE) * 100,
+    nse_alto = mean(rph_nse == 3, na.rm = TRUE) * 100,
+    activos_laboralmente = mean(rph_situacion_laboral_a == 1, na.rm = TRUE) * 100,
+    pertenencia_indigena = mean(rph_pertenencia_indigena == 1, na.rm = TRUE) * 100,
+    no_indigenas = mean(rph_pertenencia_indigena == 0, na.rm = TRUE) * 100,
+    chilenos = mean(rph_nacionalidad == 1, na.rm = TRUE) * 100,
+    extranjeros = mean(rph_nacionalidad == 2, na.rm = TRUE) * 100
+  )
+
+# Mostrar la caracterización
+print(caracterizacion_clusters)
+```
+```{r}
+data_model %>%
+  group_by(etiqueta_cluster, rph_nse) %>%
+  summarise(
+    promedio_inseguridad_general = mean(inseguridad_general, na.rm = TRUE),
+    promedio_inseguridad_habituales = mean(inseguridad_habituales, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+
+```
+
+```{r}
+# Calcular los promedios de inseguridad general por NSE y cluster
+promedios_nse_cluster <- data_model %>%
+  group_by(etiqueta_cluster, rph_nse) %>%
+  summarise(promedio_inseguridad_general = mean(inseguridad_general, na.rm = TRUE), .groups = "drop")
+
+# Graficar los resultados
+ggplot(promedios_nse_cluster, aes(x = as.factor(rph_nse), y = promedio_inseguridad_general, fill = etiqueta_cluster)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  labs(
+    title = "Promedio de Inseguridad General por NSE y Cluster",
+    x = "Nivel Socioeconómico (NSE)",
+    y = "Promedio de Inseguridad General",
+    fill = "Cluster"
+  ) +
+  theme_minimal()
+
+```
 
 #Arbol de clasificación
 
