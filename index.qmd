@@ -935,30 +935,20 @@ data_clustering <- data_model[, c(
   "inseguridad_general", 
   "inseguridad_habituales", 
   "inseguridad_espera", 
-  "inseguridad_transporte", 
-  "indice_inseguridad", 
-  "indice_delincuencia"
+  "inseguridad_transporte"
 )]
 
 # Aplicamos k-means para agrupar las observaciones en perfiles.
 
-# El número de clusters (centers) se eligió arbitrariamente como 3.
+# El número de clusters (centers) se eligió arbitrariamente como 2.
 
 # Verificamos si hay valores NA en data_clustering
 
 sum(is.na(data_clustering))
 
-# Eliminamos filas con valores NA
-
-data_clustering_clean <- na.omit(data_clustering)
-
-# Confirmamos que no hay valores NA
-
-sum(is.na(data_clustering_clean))
-
 # Realizamos clusterización con nuestros datos
 
-data_clustering_scaled <- scale(data_clustering_clean)
+data_clustering_scaled <- scale(data_clustering)
 set.seed(123)
 
 # Agregamos los resultados de los clusters al data_model original
@@ -985,6 +975,35 @@ ggplot(data_model, aes(x = inseguridad_general, y = inseguridad_habituales, colo
 ```
 HASTA ACÁ VAMOS.
 
+
+
+```{r}
+# Nombramos a los clusters
+
+data_model <- data_model %>%
+  mutate(
+    etiqueta_cluster = case_when(
+      cluster == 1 ~ "Cluster 1: Baja inseguridad general",
+      cluster == 2 ~ "Cluster 2: Alta inseguridad general"
+    )
+  )
+
+# Revisar la distribución de los clusters
+table(data_model$etiqueta_cluster)
+
+# Visualizamos los clusters
+
+ggplot(data_model, aes(x = inseguridad_general, y = inseguridad_habituales, color = etiqueta_cluster)) +
+  geom_point(alpha = 0.6) +
+  labs(
+    title = "Clusters basados en Componentes Principales (Etiquetados Correctamente)",
+    x = "Inseguridad General", 
+    y = "Inseguridad en Lugares Habituales", 
+    color = "Etiqueta del Cluster"
+  ) +
+  theme_minimal()
+
+```
 
 
 #Arbol de clasificación
