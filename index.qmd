@@ -12,7 +12,7 @@ format:
     toc: true
     toc_float: true
     css: "styles.css" 
-    code-fold: true
+    code-fold: show
 ---
 
 # Introducción

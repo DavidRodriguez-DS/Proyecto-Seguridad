@@ -12,7 +12,7 @@ format:
   html:
     toc: true
     toc_float: true
-    code-fold: true
+    code-fold: show
     output_file: index.html
 
 editor: visual
