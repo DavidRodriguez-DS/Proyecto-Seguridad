@@ -3,6 +3,10 @@
 .Rhistory
 .RData
 .Ruserdata
+about.qmd
+cforest_model_inseguridad.rds
+entorno_randomforest.RData
+grafico_cforest_base.png
 
 # Archivos temporales
 .Rtmp/
