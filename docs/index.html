@@ -116,6 +116,7 @@ ul.task-list li input[type="checkbox"] {
   <li><a href="#matriz-de-correlación-variables-inseguridad" id="toc-matriz-de-correlación-variables-inseguridad" class="nav-link" data-scroll-target="#matriz-de-correlación-variables-inseguridad">Matriz de correlación variables inseguridad</a></li>
   <li><a href="#análisis-de-las-variables-sociodemográficas" id="toc-análisis-de-las-variables-sociodemográficas" class="nav-link" data-scroll-target="#análisis-de-las-variables-sociodemográficas">Análisis de las variables sociodemográficas:</a></li>
   <li><a href="#matriz-de-correlación-variables-sociodemográficas-e-inseguridad" id="toc-matriz-de-correlación-variables-sociodemográficas-e-inseguridad" class="nav-link" data-scroll-target="#matriz-de-correlación-variables-sociodemográficas-e-inseguridad">Matriz de correlación variables sociodemográficas e inseguridad</a></li>
+  <li><a href="#t-test" id="toc-t-test" class="nav-link" data-scroll-target="#t-test">T-test</a></li>
   <li><a href="#anova" id="toc-anova" class="nav-link" data-scroll-target="#anova">Anova</a></li>
   </ul></li>
   <li><a href="#análisis-de-componentes-principales-pca" id="toc-análisis-de-componentes-principales-pca" class="nav-link" data-scroll-target="#análisis-de-componentes-principales-pca">Análisis de Componentes Principales (PCA)</a>
@@ -125,7 +126,8 @@ ul.task-list li input[type="checkbox"] {
   </ul></li>
   <li><a href="#análisis-de-clusters" id="toc-análisis-de-clusters" class="nav-link" data-scroll-target="#análisis-de-clusters">Análisis de clusters</a>
   <ul class="collapse">
-  <li><a href="#regresión-lineal" id="toc-regresión-lineal" class="nav-link" data-scroll-target="#regresión-lineal">Regresión Lineal</a>
+  <li><a href="#regresión-lineal" id="toc-regresión-lineal" class="nav-link" data-scroll-target="#regresión-lineal">Regresión Lineal</a></li>
+  <li><a href="#clusterización-identificación-de-perfiles" id="toc-clusterización-identificación-de-perfiles" class="nav-link" data-scroll-target="#clusterización-identificación-de-perfiles">Clusterización: Identificación de perfiles</a>
   <ul class="collapse">
   <li><a href="#cruce-de-clusters-con-variables-sociodemográficas-seleccionadas" id="toc-cruce-de-clusters-con-variables-sociodemográficas-seleccionadas" class="nav-link" data-scroll-target="#cruce-de-clusters-con-variables-sociodemográficas-seleccionadas">Cruce de clusters con variables sociodemográficas seleccionadas</a></li>
   </ul></li>
@@ -585,10 +587,12 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <div>
 <figure class="figure">
-<p><img src="index_files/figure-html/pre-procesamiento-2-1.png" class="img-fluid figure-img" width="672"></p>
+<p><img src="index_files/figure-html/pre-procesamiento-2.1-1.png" class="img-fluid figure-img" width="672"></p>
 </figure>
 </div>
 </div>
@@ -655,15 +659,15 @@ ul.task-list li input[type="checkbox"] {
 </div>
 <p>En base a los histogramas y estadísticos descriptivos, las variables que reflejan mayor inseguridad son:</p>
 <ol type="1">
-<li><p>“P_INSEG_OSCURO_1” (Media: 2,932): Representa la percepción de inseguridad al caminar solo/a por el barrio durante la noche. Su media más alta indica que las personas se sienten significativamente menos seguras en esta situación. Este resultado podría estar relacionado con factores como la falta de iluminación, la presencia limitada de vigilancia y el miedo al crimen en horarios nocturnos.</p></li>
-<li><p>“P_INSEG_LUGARES_8” (Media: 2,762): Representa la percepción de inseguridad en terminales de buses o ferrocarriles. La alta percepción de inseguridad puede estar asociada a la concurrencia de personas desconocidas, áreas mal vigiladas o actividades delictivas comunes en estos lugares.</p></li>
-<li><p>“P_INSEG_LUGARES_2” (Media: 2,703): Evalúa la percepción de seguridad al esperar transporte público. La inseguridad en esta situación podría estar influenciada por tiempos de espera prolongados, áreas poco iluminadas y la exposición al robo o acoso mientras se espera.</p></li>
+<li><p><em>“P_INSEG_OSCURO_1”</em> (Media: 2,932): Representa la percepción de inseguridad al caminar solo/a por el barrio durante la noche. Su media más alta indica que las personas se sienten significativamente menos seguras en esta situación. Este resultado podría estar relacionado con factores como la falta de iluminación, la presencia limitada de vigilancia y el miedo al crimen en horarios nocturnos.</p></li>
+<li><p><em>“P_INSEG_LUGARES_8”</em> (Media: 2,762): Representa la percepción de inseguridad en terminales de buses o ferrocarriles. La alta percepción de inseguridad puede estar asociada a la concurrencia de personas desconocidas, áreas mal vigiladas o actividades delictivas comunes en estos lugares.</p></li>
+<li><p><em>“P_INSEG_LUGARES_2”</em> (Media: 2,703): Evalúa la percepción de seguridad al esperar transporte público. La inseguridad en esta situación podría estar influenciada por tiempos de espera prolongados, áreas poco iluminadas y la exposición al robo o acoso mientras se espera.</p></li>
 </ol>
 <p>Variables que reflejan menor inseguridad:</p>
 <ol type="1">
-<li><p>“P_INSEG_DIA_2” (Media: 1,975): Representa la percepción de inseguridad al estar solo/a en casa durante el día. La media más baja indica que las personas se sienten mayoritariamente seguras en esta situación. Esto puede atribuirse a que estar en casa durante el día se percibe como una situación de menor riesgo, con menos probabilidades de encuentros con desconocidos o eventos delictivos.</p></li>
-<li><p>“P_INSEG_LUGARES_15” (Media: 1,96): Evalúa la percepción de seguridad en el lugar de estudio. Este bajo nivel de inseguridad sugiere que los lugares de estudio están asociados a entornos relativamente controlados y protegidos, con supervisión activa y menor riesgo de incidentes.</p></li>
-<li><p>“P_INSEG_LUGARES_14” (Media: 2,097): Representa la percepción de seguridad en el lugar de trabajo. Aunque ligeramente más alta que las anteriores, sigue indicando un nivel bajo de inseguridad percibida. Los lugares de trabajo suelen estar bien iluminados, vigilados y organizados, lo que contribuye a una mayor sensación de seguridad.</p></li>
+<li><p><em>“P_INSEG_DIA_2”</em> (Media: 1,975): Representa la percepción de inseguridad al estar solo/a en casa durante el día. La media más baja indica que las personas se sienten mayoritariamente seguras en esta situación. Esto puede atribuirse a que estar en casa durante el día se percibe como una situación de menor riesgo, con menos probabilidades de encuentros con desconocidos o eventos delictivos.</p></li>
+<li><p><em>“P_INSEG_LUGARES_15”</em> (Media: 1,96): Evalúa la percepción de seguridad en el lugar de estudio. Este bajo nivel de inseguridad sugiere que los lugares de estudio están asociados a entornos relativamente controlados y protegidos, con supervisión activa y menor riesgo de incidentes.</p></li>
+<li><p><em>“P_INSEG_LUGARES_14”</em> (Media: 2,097): Representa la percepción de seguridad en el lugar de trabajo. Aunque ligeramente más alta que las anteriores, sigue indicando un nivel bajo de inseguridad percibida. Los lugares de trabajo suelen estar bien iluminados, vigilados y organizados, lo que contribuye a una mayor sensación de seguridad.</p></li>
 </ol>
 <section id="matriz-de-correlación-variables-inseguridad" class="level2">
 <h2 class="anchored" data-anchor-id="matriz-de-correlación-variables-inseguridad">Matriz de correlación variables inseguridad</h2>
@@ -855,19 +859,21 @@ ul.task-list li input[type="checkbox"] {
 <section id="análisis-de-las-variables-sociodemográficas" class="level2">
 <h2 class="anchored" data-anchor-id="análisis-de-las-variables-sociodemográficas">Análisis de las variables sociodemográficas:</h2>
 <ol type="1">
-<li><p>“rph_sexo”:</p>
+<li><p><em>Sexo (“rph_sexo”)</em>:</p>
 <p>Rango: 1 (Hombre) a 2 (Mujer). Distribución: La mediana (2,000) y la media (1,55) indican una ligera mayoría de mujeres en la muestra.</p></li>
-<li><p>“rph_idgen”:</p>
+<li><p><em>Identidad de génerp (“rph_idgen”)</em>:</p>
 <p>Rango: 1 (Masculino) a 3 (Trans u otro). Distribución: La mediana (2,0) y la media (1,55) reflejan que la mayoría de los encuestados se identifica como masculino o femenino, mientras que una pequeña proporción se identifica como “Trans u otro”.</p></li>
-<li><p>“rph_pertenencia_indigena”: Rango: 0 (No pertenece) a 1 (Pertenece). Distribución: La media (0,09) indica que menos del 10% de los encuestados pertenece a un pueblo indígena, que se condice con resultados arrojados por instrumentos como CENSO 0217 y encuestas de opinión pública, las que arrojan que alrededor del 10% de nuestra población se identifica como perteneciente a un pueblo indígena..</p></li>
-<li><p>“rph_nacionalidad”: Rango: 1 (Chilena) a 2 (Chilena y/u otra). Distribución: La mediana (1,0) y la media (1,06) reflejan que la mayoría de los encuestados se identifica exclusivamente como chilenos.</p></li>
-<li><p>“rph_nivel” (Nivel educacional):</p>
+<li><p><em>Pertenencia indígena (“rph_pertenencia_indigena”)</em>:</p>
+<p>Rango: 0 (No pertenece) a 1 (Pertenece). Distribución: La media (0,09) indica que menos del 10% de los encuestados pertenece a un pueblo indígena, que se condice con resultados arrojados por instrumentos como CENSO 0217 y encuestas de opinión pública, las que arrojan que alrededor del 10% de nuestra población se identifica como perteneciente a un pueblo indígena..</p></li>
+<li><p><em>Nacionalidad (“rph_nacionalidad”)</em>:</p>
+<p>Rango: 1 (Chilena) a 2 (Chilena y/u otra). Distribución: La mediana (1,0) y la media (1,06) reflejan que la mayoría de los encuestados se identifica exclusivamente como chilenos.</p></li>
+<li><p><em>Nivel educacional (“rph_nivel”)</em>:</p>
 <p>Rango: 0 (Nunca asistió) a 3 (Educación superior). Distribución: La mediana (2,0) y la media (2,1) indican que la mayoría de los encuestados tiene educación secundaria o superior, con un número considerable alcanzando estudios superiores.</p></li>
-<li><p>“rph_situacion_laboral_a” (Situación laboral actual):</p>
+<li><p><em>Situación laboral actual (“rph_situacion_laboral_a”)</em>:</p>
 <p>Rango: 0 (No) a 1 (Sí). Distribución: La media (0,56) indica que aproximadamente el 56% de los encuestados estaba trabajando al momento de contestar la encuesta.</p></li>
-<li><p>“rph_edad”:</p>
+<li><p><em>Edad (“rph_edad”)</em>:</p>
 <p>Rango: 1 (0 a 14 años) a 7 (70 años o más). Distribución: La media (4,26) y la mediana (4,0) sugieren que la población está principalmente concentrada en rangos de edad entre 30 y 49 años. Debemos considerar que no hay personas incluidas en la categoría 1 de “rph_edad”, esto dado que al filtrar la base de datos a través de la variable “Kish”, sólo estamos considerando la información de personas informantes, quienes no deben tener menos de 15 años para poder contestar la encuesta ENUSC, según lo indica el documento “Manual de Usuario de la Base de Datos ENUSC 2023”, en su página 14.</p></li>
-<li><p>“rph_nse” (Nivel socioeconómico):</p>
+<li><p><em>Nivel socioeconómico (“rph_nse”)</em>:</p>
 <p>Rango: 1 (NSE bajo) a 3 (NSE alto). Distribución: La mediana (2,0) y la media (1,66) reflejan que la mayoría de los encuestados pertenece a niveles socioeconómicos bajos o medios.</p></li>
 </ol>
 <p>De tal manera, las variables sociodemográficas muestran una población diversa, con una mayoría femenina, concentrada entre los 30 y 49 años. La mayoría de los encuestados tiene educación secundaria o superior, pertenece a niveles socioeconómicos bajos o medios, y está laboralmente activo.</p>
@@ -905,7 +911,9 @@ ul.task-list li input[type="checkbox"] {
 </div>
 <p>Esta matriz de correlación refuerza en cierta medida nuestras observaciones. Parece que las variables sociodemográficas tienen comportamientos distintos en relación con la percepción de inseguridad, lo que sugiere que la especificidad de estas variables no se refleja completamente en su generalidad.</p>
 <p>Asimismo, las correlaciones positivas observadas en las variables de sexo y edad, en contraste con las negativas asociadas al nivel socioeconómico y educativo, indican patrones de comportamiento diversos. Esto resalta la necesidad de diferenciar estos comportamientos a través de perfiles sociodemográficos más específicos que los capturen de manera adecuada. Asimismo, una mayor especificidad en dichos perfiles debería hacer las correlaciones en torno a la inseguridad más claras.</p>
-<p>##T-test</p>
+</section>
+<section id="t-test" class="level2">
+<h2 class="anchored" data-anchor-id="t-test">T-test</h2>
 <p>Observando diferencias intra-grupales en variables sociodemográficas, según percepción de inseguridad utilizando índices construidos.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -947,6 +955,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Prueba T para Indice de Delincuencia por Sexo</caption>
@@ -1026,6 +1036,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Anoca para indice de delincuencia y nivel socioeconomico</caption>
@@ -1059,6 +1071,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Prueba de Tukey para índice de inseguridad y nivel socioeconómico</caption>
@@ -1096,6 +1110,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Prueba de Tukey para índice de delincuencia y nivel socioeconómico</caption>
@@ -1175,6 +1191,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Anova para indice de delincuencia con nivel educacional</caption>
@@ -1208,6 +1226,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Tukey para indice de inseguridad con nivel educacional</caption>
@@ -1245,6 +1265,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Tukey para indice de delincuencia y nivel educacional</caption>
@@ -1303,6 +1325,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Frecuencia y Proporción de rph_nivel</caption>
@@ -1478,6 +1502,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Cargas de los Componentes Principales</caption>
@@ -2005,6 +2031,8 @@ ul.task-list li input[type="checkbox"] {
 </figure>
 </div>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Componentes retenidos en el Análisis de Componentes Principales</caption>
@@ -2034,6 +2062,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Cargas de las variables en los componentes principales</caption>
@@ -2573,10 +2603,10 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="interpretación-del-gráfico-de-cargas-en-los-primeros-dos-componentes-principales" class="level2">
 <h2 class="anchored" data-anchor-id="interpretación-del-gráfico-de-cargas-en-los-primeros-dos-componentes-principales">Interpretación del gráfico de cargas en los primeros dos componentes principales</h2>
-<p>PC1: “Percepción General de Inseguridad”</p>
+<p><em>PC1: “Percepción General de Inseguridad”</em></p>
 <p>Este componente agrupa variables relacionadas con inseguridad en lugares públicos y situaciones comunes. Variables como P_INSEG_LUGARES_3, P_INSEG_LUGARES_2 y P_INSEG_LUGARES_8 tienen las cargas más altas en este componente. Estas variables representan inseguridad percibida en terminales de transporte, espacios concurridos y al esperar transporte público. Además, P_INSEG_OSCURO_1 (inseguridad al caminar en el barrio durante la noche) es otra variable con alta carga en PC1.</p>
 <p>Así, PC1 refleja un patrón amplio de inseguridad en espacios públicos y situaciones que afectan a la mayoría de las personas en su vida cotidiana. Por ello, este componente se puede denominar como “Percepción General de Inseguridad”.</p>
-<p>PC2: “Inseguridad en Lugares Habituales”</p>
+<p><em>PC2: “Inseguridad en Lugares Habituales”</em></p>
 <p>Este componente captura variables asociadas con espacios privados o habituales, como el hogar y el trabajo. Las variables P_INSEG_DIA_2 (inseguridad al estar solo/a en casa durante el día) y P_INSEG_OSCURO_2 (inseguridad al estar solo/a en casa durante la noche), tienen cargas predominantes en este componente. Además, aparecen variables relacionadas con espacios laborales y educativos, como P_INSEG_LUGARES_14 (inseguridad en el lugar de trabajo) y P_INSEG_LUGARES_15 (inseguridad en el lugar de estudio).</p>
 <p>De tal manera, PC2 representa inseguridad en contextos donde las personas suelen sentirse más seguras, como su hogar o trabajo. Este resultado es relevante porque sugiere que, para algunos grupos, la percepción de inseguridad trasciende los espacios públicos y afecta su percepción en lugares privados o controlados. Por ello, PC2 puede denominarse “Inseguridad en Lugares Habituales”.</p>
 </section>
@@ -2724,6 +2754,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Distribución de la Variable rph_edad</caption>
@@ -2749,6 +2781,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Proporción de la Variable rph_edad (%)</caption>
@@ -2774,6 +2808,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Numero de casos por nivel educacional</caption>
@@ -2828,6 +2864,8 @@ ul.task-list li input[type="checkbox"] {
 </tbody>
 </table>
 </div>
+</div>
+<div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
 <caption>Resumen del Modelo CP1</caption>
@@ -2936,12 +2974,12 @@ ul.task-list li input[type="checkbox"] {
 </table>
 </div>
 </div>
-<p>Resumen del modelo:</p>
-<p>rph_edad: La edad tiene un efecto positivo significativo sobre la inseguridad general. Cada unidad de aumento en la edad se asocia con un incremento de 0,29 unidades en el componente inseguridad_general.</p>
-<p>rph_nivel: Los niveles educativos más altos (rph_nivel2 y rph_nivel3) están asociados con mayor percepción de inseguridad en comparación con el nivel de referencia (nivel 1: “Educación Básica”). Esto podría reflejar que mayores niveles educativos están relacionados con mayor consciencia sobre los riesgos.</p>
-<p>rph_nse: Los niveles socioeconómicos más altos (rph_nse2 y rph_nse3) están asociados con una percepción menor de inseguridad, en línea con la hipótesis de que los entornos de mayor NSE suelen ser más seguros o percibidos como tal.</p>
-<p>rph_situacion_laboral_a: Las personas empleadas (1) perciben una mayor inseguridad general (coeficiente positivo de 0,46). Esto podría estar relacionado con su exposición a situaciones de inseguridad al trasladarse o trabajar fuera del hogar.</p>
-<p>rph_nacionalidad2: Las personas con doble nacionalidad o extranjeras tienden a percibir menos inseguridad general (coeficiente negativo de 0,28 unidades).</p>
+<p><u><strong>Resumen del modelo</strong></u>:</p>
+<p><em>rph_edad</em>: La edad tiene un efecto positivo significativo sobre la inseguridad general. Cada unidad de aumento en la edad se asocia con un incremento de 0,29 unidades en el componente inseguridad_general.</p>
+<p><em>rph_nivel</em>: Los niveles educativos más altos (rph_nivel2 y rph_nivel3) están asociados con mayor percepción de inseguridad en comparación con el nivel de referencia (nivel 1: “Educación Básica”). Esto podría reflejar que mayores niveles educativos están relacionados con mayor consciencia sobre los riesgos.</p>
+<p><em>rph_nse</em>: Los niveles socioeconómicos más altos (rph_nse2 y rph_nse3) están asociados con una percepción menor de inseguridad, en línea con la hipótesis de que los entornos de mayor NSE suelen ser más seguros o percibidos como tal.</p>
+<p><em>rph_situacion_laboral_a</em>: Las personas empleadas (1) perciben una mayor inseguridad general (coeficiente positivo de 0,46). Esto podría estar relacionado con su exposición a situaciones de inseguridad al trasladarse o trabajar fuera del hogar.</p>
+<p><em>rph_nacionalidad2</em>: Las personas con doble nacionalidad o extranjeras tienden a percibir menos inseguridad general (coeficiente negativo de 0,28 unidades).</p>
 <p>El resto de las variables no son significativas para precedir variabilidad de componente “inseguridad_general”</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -3052,13 +3090,13 @@ ul.task-list li input[type="checkbox"] {
 </table>
 </div>
 </div>
-<p>Resumen del modelo:</p>
-<p>rph_edad: Relación negativa significativa (-0,10). A mayor edad, menor es la percepción de inseguridad en lugares habituales. Esto puede reflejar que personas mayores se sienten más seguras en sus espacios privados.</p>
-<p>rph_nivel3: Personas con educación superior tienen una percepción significativamente mayor de inseguridad en lugares habituales en comparación con quienes tienen estudios básicos (coeficiente 0,23).</p>
-<p>rph_nse: A medida que el nivel socioeconómico aumenta (rph_nse2 y rph_nse3), la percepción de inseguridad habitual también aumenta.</p>
-<p>rph_situacion_laboral_a1: Las personas empleadas tienen una percepción ligeramente mayor de inseguridad en lugares habituales (coeficiente 0,032).</p>
-<p>rph_pertenencia_indigena1: Pertenecer a un pueblo indígena se asocia con una menor percepción de inseguridad habitual (-0,092). Esto podría estar relacionado con diferencias culturales o contextos específicos donde habitan estas personas.</p>
-<p>rph_nacionalidad2: Las personas extranjeras o con doble nacionalidad perciben menos inseguridad habitual (-0,097).</p>
+<p><u><strong>Resumen del modelo</strong></u>:</p>
+<p><em>rph_edad</em>: Relación negativa significativa (-0,10). A mayor edad, menor es la percepción de inseguridad en lugares habituales. Esto puede reflejar que personas mayores se sienten más seguras en sus espacios privados.</p>
+<p><em>rph_nivel3</em>: Personas con educación superior tienen una percepción significativamente mayor de inseguridad en lugares habituales en comparación con quienes tienen estudios básicos (coeficiente 0,23).</p>
+<p><em>rph_nse</em>: A medida que el nivel socioeconómico aumenta (rph_nse2 y rph_nse3), la percepción de inseguridad habitual también aumenta.</p>
+<p><em>rph_situacion_laboral_a1</em>: Las personas empleadas tienen una percepción ligeramente mayor de inseguridad en lugares habituales (coeficiente 0,032).</p>
+<p><em>rph_pertenencia_indigena1</em>: Pertenecer a un pueblo indígena se asocia con una menor percepción de inseguridad habitual (-0,092). Esto podría estar relacionado con diferencias culturales o contextos específicos donde habitan estas personas.</p>
+<p><em>rph_nacionalidad2</em>: Las personas extranjeras o con doble nacionalidad perciben menos inseguridad habitual (-0,097).</p>
 <p>Como podemos observar, las relaciones entre nuestras variables independientes respecto al CP 2 se desvían respecto a las relaciones existentes en el primer modelo de regresión. Las personas en espacios privados tienen diferentes razones para sentirse inseguras. Llama la atención que los adultos mayores y las personas pertenecientes a pueblos indígenas se sientan significativamente más seguras en sus espacios de desarrollo habitual que el resto de la población chilena.</p>
 <div class="cell">
 <div class="cell-output-display">
@@ -3169,12 +3207,12 @@ ul.task-list li input[type="checkbox"] {
 </table>
 </div>
 </div>
-<p>Resumen del modelo:</p>
-<p>rph_edad: A medida que aumenta la edad, también lo hace el índice de inseguridad, lo que indica que las personas mayores perciben más inseguridad en términos generales.</p>
-<p>rph_nivel (niveles 1, 2, 3): Las personas con más años de educación tienen una percepción ligeramente mayor de inseguridad.</p>
-<p>rph_nse (niveles 2, 3): A medida que aumenta el nivel socioeconómico, el índice de inseguridad tiende a disminuir. Esto podría reflejar entornos más protegidos o mayor acceso a recursos de seguridad.</p>
-<p>rph_situacion_laboral_a1: Las personas laboralmente activas tienen una percepción ligeramente mayor de inseguridad en comparación con quienes no están empleados.</p>
-<p>rph_nacionalidad2: Las personas extranjeras o con doble nacionalidad tienen un índice de inseguridad ligeramente menor en comparación con los chilenos.</p>
+<p><u><strong>Resumen del modelo</strong></u>:</p>
+<p><em>rph_edad</em>: A medida que aumenta la edad, también lo hace el índice de inseguridad, lo que indica que las personas mayores perciben más inseguridad en términos generales.</p>
+<p><em>rph_nivel (niveles 1, 2, 3)</em>: Las personas con más años de educación tienen una percepción ligeramente mayor de inseguridad.</p>
+<p><em>rph_nse (niveles 2, 3)</em>: A medida que aumenta el nivel socioeconómico, el índice de inseguridad tiende a disminuir. Esto podría reflejar entornos más protegidos o mayor acceso a recursos de seguridad.</p>
+<p><em>rph_situacion_laboral_a1</em>: Las personas laboralmente activas tienen una percepción ligeramente mayor de inseguridad en comparación con quienes no están empleados.</p>
+<p><em>rph_nacionalidad2</em>: Las personas extranjeras o con doble nacionalidad tienen un índice de inseguridad ligeramente menor en comparación con los chilenos.</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
@@ -3284,18 +3322,20 @@ ul.task-list li input[type="checkbox"] {
 </table>
 </div>
 </div>
-<p>Resumen del modelo:</p>
-<p>rph_edad: A medida que aumenta la edad, también lo hace el índice de percepción de delincuencia, lo que indica que las personas mayores perciben mayores niveles de delincuencia.</p>
-<p>rph_nivel (niveles 2, 3): Las personas con más años de educación perciben niveles ligeramente mayores de delincuencia.</p>
-<p>rph_nse (niveles 2, 3): A medida que aumenta el nivel socioeconómico, el índice de percepción de delincuencia disminuye, posiblemente reflejando mayor protección en estos entornos.</p>
-<p>rph_situacion_laboral_a1: Las personas laboralmente activas tienen una percepción ligeramente mayor de delincuencia en comparación con quienes no están empleados.</p>
-<p>rph_nacionalidad2: Las personas extranjeras o con doble nacionalidad perciben niveles ligeramente menores de delincuencia en comparación con los chilenos.</p>
+<p><u><strong>Resumen del modelo</strong></u>:</p>
+<p><em>rph_edad</em>: A medida que aumenta la edad, también lo hace el índice de percepción de delincuencia, lo que indica que las personas mayores perciben mayores niveles de delincuencia.</p>
+<p><em>rph_nivel (niveles 2, 3)</em>: Las personas con más años de educación perciben niveles ligeramente mayores de delincuencia.</p>
+<p><em>rph_nse (niveles 2, 3)</em>: A medida que aumenta el nivel socioeconómico, el índice de percepción de delincuencia disminuye, posiblemente reflejando mayor protección en estos entornos.</p>
+<p><em>rph_situacion_laboral_a1</em>: Las personas laboralmente activas tienen una percepción ligeramente mayor de delincuencia en comparación con quienes no están empleados.</p>
+<p><em>rph_nacionalidad2</em>: Las personas extranjeras o con doble nacionalidad perciben niveles ligeramente menores de delincuencia en comparación con los chilenos.</p>
 <p>A modo de síntesis, en general, los modelos predictivos muestran que las variables sociodemográficas tienen un impacto relevante, aunque moderado, en la percepción de inseguridad y delincuencia. La edad emerge como un factor consistente que incrementa ambas percepciones, lo que podría estar vinculado a una mayor vulnerabilidad percibida en las personas mayores.</p>
 <p>Las personas con más educación tienden a percibir mayores niveles de inseguridad y delincuencia, probablemente debido a una mayor exposición a información sobre riesgos o una mayor conciencia de los mismos. Por otro lado, el nivel socioeconómico (NSE) muestra una relación inversa: a medida que este aumenta, las percepciones de inseguridad y delincuencia disminuyen, reflejando probablemente entornos más protegidos o con mayor acceso a recursos de seguridad.</p>
 <p>Estar laboralmente activo también se asocia con percepciones ligeramente más altas de inseguridad y delincuencia, lo que podría estar relacionado con una mayor movilidad y exposición en espacios públicos.</p>
 <p>Finalmente, las personas con nacionalidad extranjera o doble nacionalidad tienden a percibir menores niveles de inseguridad y delincuencia, lo que podría reflejar diferencias culturales o expectativas distintas en cuanto a la seguridad.</p>
 <p>Más allá de lo anterior, es relevante mencionar que la capacidad explicativa de nuestros modelos es bastante baja, variando entre un R² de 2% y 5% y con una cantidad considerable de residuos. Por lo anterior, debemos establecer que parte importante de la variabilidad de nuestros factores a explicar no es capturada por nuestros modelos. Así, más allá de las variables sociodemográficas, existirían otro tipo de variables independientes a partir de las cuales se podría predecir, de manera más completa, nuestro fenómeno de interés.</p>
-<p>Creando los clusters</p>
+</section>
+<section id="clusterización-identificación-de-perfiles" class="level2">
+<h2 class="anchored" data-anchor-id="clusterización-identificación-de-perfiles">Clusterización: Identificación de perfiles</h2>
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
@@ -3355,8 +3395,8 @@ ul.task-list li input[type="checkbox"] {
 </table>
 </div>
 </div>
-<p>Cluster 1: Según los datos, vemos que el cluster 1 tiene una media de inseguridad general negativa, de un -1,45. Respecto a la inseguridad habitual, también esta es negativa, con un valor de -0,191. Respecto a la espera observamos que tienen una inseguridad positiva respecto a la espera (0,387) y una tasa también positiva de inseguridad respecto a la movilización en transporte público (0,014). El cluster tiene un total de 28.020 observaciones.</p>
-<p>Cluster 2: En este cluster vemos una inseguridad general positiva, de 1,95. Del mismo modo, observamos que su media de inseguridad en lugares habituales de desarrollo personal es de 0,26. No obstante, en la espera de transporte público tienen una media de inseguridad negativa de -0,52 y una inseguridad en medios de transporte público también negativa, de un -0,018. El cluster tiene un total de 21.019 observaciones.</p>
+<p><em>Cluster 1</em>: Según los datos, vemos que el cluster 1 tiene una media de inseguridad general negativa, de un -1,45. Respecto a la inseguridad habitual, también esta es negativa, con un valor de -0,191. Respecto a la espera observamos que tienen una inseguridad positiva respecto a la espera (0,387) y una tasa también positiva de inseguridad respecto a la movilización en transporte público (0,014). El cluster tiene un total de 28.020 observaciones.</p>
+<p><em>Cluster 2</em>: En este cluster vemos una inseguridad general positiva, de 1,95. Del mismo modo, observamos que su media de inseguridad en lugares habituales de desarrollo personal es de 0,26. No obstante, en la espera de transporte público tienen una media de inseguridad negativa de -0,52 y una inseguridad en medios de transporte público también negativa, de un -0,018. El cluster tiene un total de 21.019 observaciones.</p>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -3398,7 +3438,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </div>
-<p>Presentamos un gráfico de densidad de nuestros clusters</p>
+<p>Presentamos un gráfico de densidad de nuestros clusters:</p>
 <div class="cell">
 <div class="cell-output-display">
 <div>
@@ -3408,7 +3448,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </div>
-<p>Caracterizando a nuestros conglomerados</p>
+<p>Caracterizamos a nuestros conglomerados:</p>
 <div class="cell">
 <div class="cell-output-display">
 <table class="caption-top table table-sm table-striped small">
@@ -3697,7 +3737,7 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 <p>El gráfico evidencia claramente que las mujeres, en promedio, tienen menores niveles de seguridad y mayores niveles de inseguridad en comparación con los hombres en ambos clusters. La distribución y proporción de sexo en los clusters confirma la hipótesis de que las mujeres experimentan mayores niveles de inseguridad en comparación con los hombres. Esto se refleja de manera consistente tanto en las proporciones de observaciones como en los promedios de inseguridad general por sexo.</p>
-<p>#Graficamos la composición de nuestros clusters según la situación laboral de las personas entrevistadas</p>
+<p>Graficamos la composición de nuestros clusters según la situación laboral de las personas entrevistadas</p>
 <div class="cell">
 <div class="cell-output-display">
 <div>
