@@ -409,7 +409,7 @@ Esta matriz de correlación refuerza en cierta medida nuestras observaciones. Pa
 Asimismo, las correlaciones positivas observadas en las variables de sexo y edad, en contraste con las negativas asociadas al nivel socioeconómico y educativo, indican patrones de comportamiento diversos. Esto resalta la necesidad de diferenciar estos comportamientos a través de perfiles sociodemográficos más específicos que los capturen de manera adecuada. Asimismo, una mayor especificidad en dichos perfiles debería hacer las correlaciones en torno a la inseguridad más claras.
 
 
-##T-test
+## T-test
 
 Observando diferencias intra-grupales en variables sociodemográficas, según percepción de inseguridad utilizando índices construidos.
 
