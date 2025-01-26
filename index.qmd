@@ -1315,7 +1315,7 @@ proporciones_laborales_cluster <- data_model %>%
   )
 ```
 
-#Graficamos la composición de nuestros clusters según la situación laboral de las personas entrevistadas
+Graficamos la composición de nuestros clusters según la situación laboral de las personas entrevistadas
 
 ```{r cluster-actividad-laboral-grafico, echo=FALSE, warning=FALSE}
 ggplot(proporciones_laborales_cluster, aes(x = etiqueta_cluster, y = proporcion, fill = rph_situacion_laboral_a)) +
