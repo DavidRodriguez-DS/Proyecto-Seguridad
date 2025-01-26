@@ -1,0 +1,17 @@
+<<<<<<< HEAD
+/* Cambiar el color del header (navbar) a negro */
+.navbar {
+  background-color: #000000; /* Negro */
+  color: #ffffff; /* Texto blanco para contraste */
+}
+
+.navbar a {
+  color: #ffffff; /* Color de los enlaces */
+}
+
+.navbar a:hover {
+  color: #cccccc; /* Color al pasar el mouse por los enlaces */
+}
+=======
+/* css styles */
+>>>>>>> a93f83eb62737d1af6de1ae2c7088c6e71f963c4
