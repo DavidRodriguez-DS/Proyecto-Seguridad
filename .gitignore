@@ -1,4 +1,30 @@
-.Rproj.user
+# Archivos de RStudio
+.Rproj.user/
 .Rhistory
 .RData
 .Ruserdata
+
+# Archivos temporales
+.Rtmp/
+.Rapp.history
+
+# Dependencias de renv
+/renv/
+
+# Librerías locales
+/library/
+
+# Archivos de salida
+*.html
+*.pdf
+*.docx
+
+# Directorios de Quarto
+/.quarto/
+
+# Archivos de caché
+/cache/
+
+# Archivos específicos del sistema operativo
+.DS_Store
+Thumbs.db

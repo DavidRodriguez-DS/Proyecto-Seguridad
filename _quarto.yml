@@ -6,14 +6,14 @@ website:
   navbar:
     left:
       - href: index.qmd
-        text: Home
-      - about.qmd
+        text: "Inicio"
 
 format:
   html:
-    theme: cosmo
-    css: styles.css
     toc: true
+    toc_float: true
+    code-fold: true
+    output_file: index.html
 
 editor: visual
 

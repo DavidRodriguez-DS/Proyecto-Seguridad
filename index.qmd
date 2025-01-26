@@ -1,12 +1,25 @@
 ---
-title: "Proyecto-Seguridad"
+title: "Proyecto-Seguridad: Análisis de Clusters en torno a la Percepción de Inseguridad en Chile"
+author: 
+  - name: "David Rodríguez Valenzuela"
+  - name: "Fernando Sepúlveda Retamal"
+date: "`r Sys.Date()`"
+lang: es
+format:
+  html:
+    theme: slate
+    highlight: tango
+    toc: true
+    toc_float: true
+    css: "styles.css" 
+    code-fold: true
 ---
 
-#Introducción
+# Introducción
 
-En el presente trabajo, se analizarán diversas variables incluidas en la encuesta ENUSC 2023, con la finalidad de observar la manera en que diversos tipos de percepción de inseguridad se relacionan con ciertas características de la población, como la edad, nivel educacional, sexo, nivel socioeconómico, entre otros factores. De esta manera, a través de este trabajo se buscarán agrupar los diversos tipos de inseguridad declarados por las personas entrevistadas, con el objetivo de caracterizar sociodemográficamente las diversas variables de este tipo, que determinan los perfiles de inseguridad existentes en la sociedad chilena.
+En el presente trabajo, se analizarán diversas variables incluidas en la encuesta ENUSC 2023, con la finalidad de observar la manera en que los tipos de percepción de inseguridad capturados en base al análisis, se relacionan con ciertas características de la población, como la edad, nivel educacional, sexo, nivel socioeconómico, entre otros factores. De tal manera, a través de este trabajo se buscarán agrupar los diversos tipos de inseguridad declarados por las personas entrevistadas, con el objetivo de caracterizar sociodemográficamente las diversas variables de este tipo, que determinan los perfiles de inseguridad existentes en la sociedad chilena.
 
-```{r seteo-paquetes-y-renv, results='hide'}
+```{r seteo-paquetes-y-renv, results='hide', echo=FALSE, warning=FALSE, message=FALSE}
 rm(list = ls())
 
 if(!require(renv)){install.packages("renv")}
@@ -20,7 +33,7 @@ packages <- c(
   "rio", "dplyr", "ggplot2", "RColorBrewer", "kableExtra", "Rcpp", 
   "ggcorrplot", "latex2exp", "broom", "knitr", "haven", "tidyr", 
   "PracTools", "paramtest", "tidyverse", "rpart", "rpart.plot", "janitor", 
-  "caret", "rlang", "randomForest", "party", "ggforce", "randomForest", "tidyverse", "janitor", "party", "corrplot", "randomForestExplainer", "shiny"
+  "caret", "rlang", "randomForest", "party", "ggforce", "randomForest", "tidyverse", "janitor", "party", "corrplot", "randomForestExplainer", "shiny", "nFactors", "GPArotation", "psych", "quarto"
 )
 
 # Función para instalar y cargar paquetes
@@ -47,9 +60,9 @@ renv::snapshot(prompt = TRUE)
 
 # Análisis Descriptivo
 
-```{r carga-datos}
+```{r carga-datos, echo=FALSE, warning=FALSE}
 # En primer lugar, cargamos las bases de datos necesarias para el desarrollo de nuestro trabajo.
-# Se utilizarán las bases de datos correspondientes a 1) la Encuesta ENUSC 2023 y 2) la Encuesta CASEN 2022.
+# Se utilizará la base de datos correspondiente a la Encuesta Nacional Urbana de Seguridad Ciudadana (ENUSC), año 2023.
 
 # ENUSC 2023
 
@@ -58,38 +71,56 @@ url_enusc <- "https://www.ine.gob.cl/docs/default-source/seguridad-ciudadana/bbd
 enusc2023 <- import(url_enusc)
 ```
 
-```{r pre-procesamiento}
+```{r pre-procesamiento, echo=FALSE, warning=FALSE, results='hide'}
 # A continuación, seleccionamos las variables a utilizar para el desarrollo de nuestro trabajo.
-# De tal manera, seleccionamos un total de 47 variables, entre las que podemos observar variables de tipo sociodemográficas,
-# variables que hacen referencia a la percepción de inseguridad en el territorio, factores de expansión, ponderadores, entre otro
-# tipo de variables de índole técnico.
+# De tal manera, se escogen un total de 47 variables, entre las que podemos observar variables de tipo sociodemográficas, variables que hacen referencia a la percepción de inseguridad en el territorio, factores de expansión, ponderadores, entre otros tipos de variables de índole técnico.
 
 enusc_reducida <- enusc2023 %>% select(rph_ID, idhogar, enc_idr, enc_region, enc_rpc, rph_numHogar, rph_edad, rph_sexo, rph_idgen, Kish, Hogar_Kish, rph_pertenencia_indigena, rph_nacionalidad, rph_nivel, rph_situacion_laboral_a, rph_nse, P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO, P_INSEG_LUGARES_1, P_INSEG_LUGARES_2, P_INSEG_LUGARES_3, P_INSEG_LUGARES_4, P_INSEG_LUGARES_5, P_INSEG_LUGARES_6, P_INSEG_LUGARES_7, P_INSEG_LUGARES_8, P_INSEG_LUGARES_9, P_INSEG_LUGARES_10, P_INSEG_LUGARES_11, P_INSEG_LUGARES_12, P_INSEG_LUGARES_13, P_INSEG_LUGARES_14, P_INSEG_LUGARES_15, P_INSEG_LUGARES_16, P_INSEG_OSCURO_1, P_INSEG_DIA_1, P_INSEG_OSCURO_2, P_INSEG_DIA_2, Fact_Pers_Com, Fact_Pers_Reg, Fact_Pers_Regional_102, Fact_Hog_Com, Fact_Hog_Reg, Fact_Hog_Regional_102, VarStrat, Conglomerado)
 
-# Una vez realizamos la selección de nuestras variables de interés, filtramos la base de datos, dejando sólo las respuestas otorgadas
-# por las personas informantes de esta. Así, el número total de casos baja de 146.294 (que representaba al total de población incuida    en la encuesta), a 49.813 observaciones.
+# Una vez realizamos la selección de nuestras variables de interés, filtramos la base de datos, dejando sólo las respuestas otorgadas por las personas informantes de esta. Así, el número total de casos disminuye de 146.294 (que representaba al total de población incluída en la encuesta), a 49.813 observaciones.
 
 enusc_reducida <- enusc_reducida %>% filter(Kish==1)
 
-# Transformamos las categorías No sabe, No responde y No aplica a NA´s
+# Transformamos las categorías "No sabe", "No responde", "No aplica" y "Sin dato" a datos perdidos (NA´s)
 
 enusc_reducida <- enusc_reducida %>%
   mutate_all(~ifelse(. %in% c(85, 88, 96, 99), NA, .))
 
-# Invertimos el orden de las categorías de las variables que miden inseguridad. El objetivo principal de tal modificación es garantizar que una mayor percepción de inseguridad corresponda a un valor más alto en la escala. Esto facilita la interpretación y el análisis, al asociar los valores altos con mayor percepción de inseguridad
+#Vemos si nuestras variables sociodemograficas más relevantes tienen NA
+unique(enusc_reducida$rph_sexo)
+unique(enusc_reducida$rph_edad)
+unique(enusc_reducida$rph_nse)
+unique(enusc_reducida$rph_nivel)
+unique(enusc_reducida$rph_nacionalidad)
+unique(enusc_reducida$rph_pertenencia_indigena)
+unique(enusc_reducida$rph_situacion_laboral_a)
+
+#Vemos cuantos NA tienen las variables sociodemograficas de interés que presentan NA
+sum(is.na(enusc_reducida$rph_nivel))
+sum(is.na(enusc_reducida$rph_nacionalidad))
+sum(is.na(enusc_reducida$rph_pertenencia_indigena))
+
+#Vemos que no son significativos así que eliminamos las columnas con NA para que a posteriores analisis estos no sean un problema
+
+enusc_reducida <- enusc_reducida %>%
+  filter(!is.na(rph_nivel)) %>%
+  filter(!is.na(rph_nacionalidad)) %>%
+  filter(!is.na(rph_pertenencia_indigena))
+
+# Invertimos el orden rph_pertenencia_indigena# Invertimos el orden de las categorías de las variables que miden inseguridad. El objetivo principal de tal modificación es garantizar que una mayor percepción de inseguridad corresponda a un valor más alto en la escala de cada variable. Esto facilitará la interpretación y el análisis de resultados, al asociar los valores altos con mayor percepción de inseguridad.
 
 enusc_reducida <- enusc_reducida %>% mutate(across(c("P_INSEG_LUGARES_1", "P_INSEG_LUGARES_2", "P_INSEG_LUGARES_3", "P_INSEG_LUGARES_4", "P_INSEG_LUGARES_5", "P_INSEG_LUGARES_6", "P_INSEG_LUGARES_7", "P_INSEG_LUGARES_8", 
 "P_INSEG_LUGARES_9", "P_INSEG_LUGARES_10", "P_INSEG_LUGARES_11", "P_INSEG_LUGARES_12", 
 "P_INSEG_LUGARES_13", "P_INSEG_LUGARES_14", "P_INSEG_LUGARES_15", "P_INSEG_LUGARES_16", 
 "P_INSEG_OSCURO_1", "P_INSEG_DIA_1", "P_INSEG_OSCURO_2", "P_INSEG_DIA_2"), ~ 5 - .))
 
-# El mismo ejercicio realizamos con las variables que representan percepción de variación del nivel de delincuencia en el país, la comuna y el barrio. De tal manera, la categoría más alta de tales variables, representarán un aumento en el la percepción del nivel de delincuencia, mientras que la categoría más baja representará una disminucación de tal percepción.
+# Realizamos el mismo ejercicio con las variables que representan la percepción de variación del nivel de delincuencia en el país, la comuna y el barrio. De tal manera, la categoría más alta de estas variables, representará un aumento en el la percepción del nivel de delincuencia, mientras que la categoría más baja permitirá visualizar una percepción disminuida de este fenómeno.
 
 enusc_reducida <- enusc_reducida %>% 
   mutate(across(c("P_AUMENTO_PAIS", "P_AUMENTO_COM", "P_AUMENTO_BARRIO"), ~ 4 - .))
 
 # Finalmente, se procede a la recodificación de algunas de nuestras variables sociodemográficas.
-# El código transforma las variables de la siguiente manera: en rph_pertenencia_indigena, la categoría 1 (pertenece a un pueblo indígena) se mantiene, mientras que 2 (no pertenece) se convierte en 0, y los valores 88 (no sabe) y 99 (no responde) se recodifican como NA. Por otro lado, para la variable rph_situacion_laboral_a, 1 (sí) se mantiene y 2 (no) se convierte en 0, asignando NA a cualquier otro valor.
+# El código transforma las variables de la siguiente manera: en "rph_pertenencia_indigena", la categoría 1 (pertenece a un pueblo indígena) se mantiene, mientras que la categoría 2 (no pertenece) se convierte en 0. Por otro lado, para la variable "rph_situacion_laboral_a", 1 (sí) se mantiene y 2 (no) se convierte en 0, asignando NA a cualquier otro valor.
 
 enusc_reducida <- enusc_reducida %>%
   mutate(rph_pertenencia_indigena = ifelse(rph_pertenencia_indigena == 1, 1, 
@@ -98,7 +129,7 @@ enusc_reducida <- enusc_reducida %>%
                                           ifelse(rph_situacion_laboral_a == 2, 0, NA)))
 
 
-# A continuación, procedemos a realizar dos subsets de datos, segmentando por variables relativas a percepción de inseguridad ("enusc_inseguridad") y por variables sociodemográficas a utilizar a lo largo del desarrollo de nuestro trabajo ("enusc_sociodemo)
+# A continuación, procedemos a realizar dos subsets de datos, segmentando por variables relativas a la percepción de inseguridad ("enusc_inseguridad") y por variables sociodemográficas a utilizar a lo largo del desarrollo de nuestro trabajo ("enusc_sociodemo)
 
 enusc_inseguridad = subset(enusc_reducida, select = c(P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO, P_INSEG_LUGARES_1, P_INSEG_LUGARES_2, P_INSEG_LUGARES_3, P_INSEG_LUGARES_4, P_INSEG_LUGARES_5, P_INSEG_LUGARES_6, P_INSEG_LUGARES_7, P_INSEG_LUGARES_8, P_INSEG_LUGARES_9, P_INSEG_LUGARES_10, P_INSEG_LUGARES_11, P_INSEG_LUGARES_12, P_INSEG_LUGARES_13, P_INSEG_LUGARES_14, P_INSEG_LUGARES_15, P_INSEG_LUGARES_16, P_INSEG_OSCURO_1, P_INSEG_DIA_1, P_INSEG_OSCURO_2, P_INSEG_DIA_2))
 
@@ -107,12 +138,19 @@ enusc_sociodemo = subset(enusc_reducida, select = c(rph_sexo, rph_idgen, rph_per
 # Procedemos a realizar una primera exploración de los datos relativos a la percepción de inseguridad, visualizando estadísticos descriptivos para el subset 'enusc_inseguridad'
 
 summary(enusc_inseguridad)
+```
 
-# Usando la función 'describe' del paquete psych para un análisis más detallado
 
-psych::describe(enusc_inseguridad)
+```{r pre-procesamiento-2, echo=FALSE, warning=FALSE}
+# Usamos la función 'describe' del paquete psych para un análisis más detallado y la graficamos con kable
 
-# Finalmente, se genera gráfico de barras para comparar proporciones de respuesta relativas a las personas que consideran que delincuencia disminuyó (categoría 1), se mantuvo (categoría 2) o aumentó (categoría 3), en los últimos 12 meses, considerando el barrio en que habita, su comuna y el país en general
+describe_enusc <- psych::describe(enusc_inseguridad)
+
+kable(describe_enusc, caption = "Análisis de variables de inseguridad", format = "markdown")  
+
+# Podemos observar que, en general, las medias y medianas de las variables oscilan entre 2 y 3, lo que sugiere una percepción moderada-alta de inseguridad.
+
+# Finalmente, se genera gráfico de barras para comparar proporciones de respuesta relativas a las personas que consideran que la delincuencia disminuyó (categoría 1), se mantuvo (categoría 2) o aumentó (categoría 3), en los últimos 12 meses, considerando el barrio en que habita, su comuna y el país en general
 
 enusc_percepcion <- enusc_reducida %>%
   select(P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO) %>%
@@ -124,33 +162,26 @@ enusc_percepcion <- enusc_reducida %>%
                            P_AUMENTO_BARRIO = "Barrio"))
 
 # Gráfico de barras
-ggplot(enusc_percepcion, aes(x = variable, fill = factor(valor))) +
+
+ggplot(enusc_percepcion, aes(x = variable, fill = factor(valor, levels = c(3, 2, 1)))) +
   geom_bar(position = "fill", color = "black") +
-  scale_fill_brewer(palette = "Set2", labels = c("Bajó", "Se Mantuvo", "Aumentó")) +
+  scale_fill_manual(
+    values = c("#FC8D62", "#66C2A5", "#8DA0CB"),
+    labels = c("Aumentó", "Se Mantuvo", "Bajó")
+  ) +
   labs(title = "Percepción de Variación de Delincuencia Durante los Últimos 12 Meses",
        x = "Territorio",
        y = "Proporción",
        fill = "Percepción") +
   theme_minimal()
 
-
-# En base a los resultados arrojados, y en relación a las variables de percepción de aumento de delincuencia (P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO), podemos indicar:
-
-# Rango de valores:
-
-# Estas variables tienen un rango de 1 a 3, indicando que las transformaciones realizadas previamente son correctas.
 ```
 
-Respecto a la media, podemos indicar que:
+En base a los resultados arrojados por el gráfico, y en relación a las variables de percepción de aumento de delincuencia ("P_AUMENTO_PAIS", "P_AUMENTO_COM", "P_AUMENTO_BARRIO"), podemos indicar:
 
-P_AUMENTO_PAIS tiene una media de 2.879, lo que indica una percepción general de aumento en el nivel de delincuencia durante los últimos 12 meses.P_AUMENTO_COM y P_AUMENTO_BARRIO tienen medias menores (2.756 y 2.461), indicando que la percepción de aumento de la delincuencia es menor a nivel local.
+"P_AUMENTO_PAIS" tiene una media de 2,879, lo que indica una percepción general de aumento en el nivel de delincuencia durante los últimos 12 meses. "P_AUMENTO_COM" y "P_AUMENTO_BARRIO" tienen medias menores (2,756 y 2,461), indicando que la percepción de aumento de la delincuencia es menor a nivel local.En base a la información arrojada, podemos establecer que las personas tienden a considerar a su unidad territorial próxima mayormente segura, mientras que a aquella que se encuentra más lejana (comuna y país), se observa mayormente afectada por el fenómeno delictivo.
 
-```{r graficos-inseguridad}
-# Respecto a las variables de percepción de inseguridad (P_INSEG_LUGARES_):
-
-# Sobre las medias y mediana de las variables:
-
-# En general, las medias y medianas de las variables oscilan entre 2 y 3, lo que sugiere una percepción moderada-alta de inseguridad.
+```{r graficos-inseguridad, echo=FALSE, warning=FALSE}
 
 # Visualizamos histogramas para cada variable de inseguridad
 
@@ -192,23 +223,23 @@ for (i in 1:total_pages) {
 
 En base a los histogramas y estadísticos descriptivos, las variables que reflejan mayor inseguridad son:
 
-1.  `P_INSEG_OSCURO_1` (Media: 2.932): Representa la percepción de inseguridad al caminar solo/a por el barrio durante la noche. Su media más alta indica que las personas se sienten significativamente menos seguras en esta situación. Este resultado podría estar relacionado con factores como la falta de iluminación, la presencia limitada de vigilancia y el miedo al crimen en horarios nocturnos.
+1.  "P_INSEG_OSCURO_1" (Media: 2,932): Representa la percepción de inseguridad al caminar solo/a por el barrio durante la noche. Su media más alta indica que las personas se sienten significativamente menos seguras en esta situación. Este resultado podría estar relacionado con factores como la falta de iluminación, la presencia limitada de vigilancia y el miedo al crimen en horarios nocturnos.
 
-2.  `P_INSEG_LUGARES_8` (Media: 2.762): Representa la percepción de inseguridad en terminales de buses o ferrocarriles. La alta percepción de inseguridad puede estar asociada a la concurrencia de personas desconocidas, áreas mal vigiladas o actividades delictivas comunes en estos lugares.
+2.  "P_INSEG_LUGARES_8" (Media: 2,762): Representa la percepción de inseguridad en terminales de buses o ferrocarriles. La alta percepción de inseguridad puede estar asociada a la concurrencia de personas desconocidas, áreas mal vigiladas o actividades delictivas comunes en estos lugares.
 
-3.  `P_INSEG_LUGARES_2` (Media: 2.703): Evalúa la percepción de seguridad al esperar transporte público. La inseguridad en esta situación podría estar influenciada por tiempos de espera prolongados, áreas poco iluminadas y la exposición al robo o acoso mientras se espera.
+3.  "P_INSEG_LUGARES_2" (Media: 2,703): Evalúa la percepción de seguridad al esperar transporte público. La inseguridad en esta situación podría estar influenciada por tiempos de espera prolongados, áreas poco iluminadas y la exposición al robo o acoso mientras se espera.
 
 Variables que reflejan menor inseguridad:
 
-1.  `P_INSEG_DIA_2` (Media: 1.975): Representa la percepción de inseguridad al estar solo/a en casa durante el día. La media más baja indica que las personas se sienten mayoritariamente seguras en esta situación. Esto puede atribuirse a que estar en casa durante el día se percibe como una situación de menor riesgo, con menos probabilidades de encuentros con desconocidos o eventos delictivos.
+1.  "P_INSEG_DIA_2" (Media: 1,975): Representa la percepción de inseguridad al estar solo/a en casa durante el día. La media más baja indica que las personas se sienten mayoritariamente seguras en esta situación. Esto puede atribuirse a que estar en casa durante el día se percibe como una situación de menor riesgo, con menos probabilidades de encuentros con desconocidos o eventos delictivos.
 
-2.  `P_INSEG_LUGARES_15` (Media: 1.96): Evalúa la percepción de seguridad en el lugar de estudio. Este bajo nivel de inseguridad sugiere que los lugares de estudio están asociados a entornos relativamente controlados y protegidos, con supervisión activa y menor riesgo de incidentes.
+2.  "P_INSEG_LUGARES_15" (Media: 1,96): Evalúa la percepción de seguridad en el lugar de estudio. Este bajo nivel de inseguridad sugiere que los lugares de estudio están asociados a entornos relativamente controlados y protegidos, con supervisión activa y menor riesgo de incidentes.
 
-3.  `P_INSEG_LUGARES_14` (Media: 2.097): Representa la percepción de seguridad en el lugar de trabajo. Aunque ligeramente más alta que las anteriores, sigue indicando un nivel bajo de inseguridad percibida. Los lugares de trabajo suelen estar bien iluminados, vigilados y organizados, lo que contribuye a una mayor sensación de seguridad.
+3.  "P_INSEG_LUGARES_14" (Media: 2,097): Representa la percepción de seguridad en el lugar de trabajo. Aunque ligeramente más alta que las anteriores, sigue indicando un nivel bajo de inseguridad percibida. Los lugares de trabajo suelen estar bien iluminados, vigilados y organizados, lo que contribuye a una mayor sensación de seguridad.
 
-#Matriz de correlación
+## Matriz de correlación variables inseguridad
 
-```{r matriz-correlacion-inseguridad}
+```{r matriz-correlacion-inseguridad, echo=FALSE, warning=FALSE}
 # A continuación, calculamos la matriz de correlaciones para las variables que miden percepción de inseguridad
 
 corr_matrix <- cor(enusc_inseguridad, use = "pairwise.complete.obs")
@@ -228,88 +259,112 @@ ggcorrplot(corr_matrix,
 
 Podemos observar, en base a la matriz de correlaciones, que todas las variables relativas a la percepción de inseguridad, tienen una relación positiva, con un valor R mínimo de 0,1. En general, se observan valores medios y medios altos de correlación, lo que tiene sentido, si se considera que todo el set de preguntas incluidas en esta matriz de correlación, se deriva de la percepción de inseguridad. Más allá de lo anterior, hay zonas del gráfico claramente más coloridas y otras que indican menores niveles de correlación, punto a considerar para un posterior análisis de reducción de dimensionalidad.
 
-```{r visualizacion-variables-sociodemo}
-# Estadísticos descriptivos para 'enusc_sociodemo'
-
-summary(enusc_sociodemo)
+```{r visualizacion-variables-sociodemo, echo=FALSE, warning=FALSE}
 
 # Usando la función 'describe' del paquete psych para mejorar visualización
 
-psych::describe(enusc_sociodemo)
+tabla_sociodemo <- psych::describe(enusc_sociodemo)
+
+kable(tabla_sociodemo, caption = "Análisis de variables sociodemográficas", format = "markdown") 
 ```
 
-## Análisis de las variables sociodemográficas
+## Análisis de las variables sociodemográficas:
 
-1.  `rph_sexo`:
+1.  "rph_sexo":
 
-    Rango: 1 (Hombre) a 2 (Mujer). Distribución: La mediana (2.000) y la media (1.558) indican una ligera mayoría de mujeres en la muestra.
+    Rango: 1 (Hombre) a 2 (Mujer). Distribución: La mediana (2,000) y la media (1,55) indican una ligera mayoría de mujeres en la muestra.
 
-2.  `rph_idgen`:
+2.  "rph_idgen":
 
-    Rango: 1 (Masculino) a 3 (Trans u otro). Distribución: La mediana (2.000) y la media (1.559) reflejan que la mayoría de los encuestados se identifica como masculino o femenino, mientras que una pequeña proporción se identifica como "Trans u otro".
+    Rango: 1 (Masculino) a 3 (Trans u otro). Distribución: La mediana (2,0) y la media (1,55) reflejan que la mayoría de los encuestados se identifica como masculino o femenino, mientras que una pequeña proporción se identifica como "Trans u otro".
 
-3.  `rph_pertenencia_indigena`: Rango: 0 (No pertenece) a 1 (Pertenece). Distribución: La media (0.0905) indica que menos del 10% de los encuestados pertenece a un pueblo indígena, mostrando una representación baja.
+3.  "rph_pertenencia_indigena": Rango: 0 (No pertenece) a 1 (Pertenece). Distribución: La media (0,09) indica que menos del 10% de los encuestados pertenece a un pueblo indígena, que se condice con resultados arrojados por instrumentos como CENSO 0217 y encuestas de opinión pública, las que arrojan que alrededor del 10% de nuestra población se identifica como perteneciente a un pueblo indígena..
 
-4.  `rph_nacionalidad`: Rango: 1 (Chilena) a 2 (Chilena y/u otra). Distribución: La mediana (1.000) y la media (1.063) reflejan que la mayoría de los encuestados se identifica exclusivamente como chilenos.
+4.  "rph_nacionalidad": Rango: 1 (Chilena) a 2 (Chilena y/u otra). Distribución: La mediana (1,0) y la media (1,06) reflejan que la mayoría de los encuestados se identifica exclusivamente como chilenos.
 
-5.  `rph_nivel` (Nivel educacional):
+5.  "rph_nivel" (Nivel educacional):
 
-    Rango: 0 (Nunca asistió) a 3 (Educación superior). Distribución: La mediana (2.000) y la media (2.173) indican que la mayoría de los encuestados tiene educación secundaria o superior, con un número considerable alcanzando estudios superiores.
+    Rango: 0 (Nunca asistió) a 3 (Educación superior). Distribución: La mediana (2,0) y la media (2,1) indican que la mayoría de los encuestados tiene educación secundaria o superior, con un número considerable alcanzando estudios superiores.
 
-6.  `rph_situacion_laboral_a` (Situación laboral actual):
+6.  "rph_situacion_laboral_a" (Situación laboral actual):
 
-    Rango: 0 (No) a 1 (Sí). Distribución: La media (0.5568) indica que aproximadamente el 56% de los encuestados está laboralmente activo.
+    Rango: 0 (No) a 1 (Sí). Distribución: La media (0,56) indica que aproximadamente el 56% de los encuestados estaba trabajando al momento de contestar la encuesta.
 
-7.  `rph_edad`:
+7.  "rph_edad":
 
-    Rango: 1 (0 a 14 años) a 7 (70 años o más). Distribución: La media (4.267) y la mediana (4.000) sugieren que la población está principalmente concentrada en rangos de edad entre 30 y 49 años.
+    Rango: 1 (0 a 14 años) a 7 (70 años o más). Distribución: La media (4,26) y la mediana (4,0) sugieren que la población está principalmente concentrada en rangos de edad entre 30 y 49 años. Debemos considerar que no hay personas incluidas en la categoría 1 de "rph_edad", esto dado que al filtrar la base de datos a través de la variable "Kish", sólo estamos considerando la información de personas informantes, quienes no deben tener menos de 15 años para poder contestar la encuesta ENUSC, según lo indica el documento "Manual de Usuario de la Base de Datos ENUSC 2023", en su página 14.
 
-8.  `rph_nse` (Nivel socioeconómico):
+8.  "rph_nse" (Nivel socioeconómico):
 
-    Rango: 1 (NSE bajo) a 3 (NSE alto). Distribución: La mediana (2.000) y la media (1.661) reflejan que la mayoría de los encuestados pertenece a niveles socioeconómicos bajos o medios.
+    Rango: 1 (NSE bajo) a 3 (NSE alto). Distribución: La mediana (2,0) y la media (1,66) reflejan que la mayoría de los encuestados pertenece a niveles socioeconómicos bajos o medios.
 
 De tal manera, las variables sociodemográficas muestran una población diversa, con una mayoría femenina, concentrada entre los 30 y 49 años. La mayoría de los encuestados tiene educación secundaria o superior, pertenece a niveles socioeconómicos bajos o medios, y está laboralmente activo.
 
-```{r indice-inseguridad}
+```{r indice-inseguridad, echo=FALSE, warning=FALSE}
 # A continuación, creamos un indice de inseguridad y de percepción de variación de delincuencia:
 
 enusc_reducida <- enusc_reducida %>%
   mutate(indice_inseguridad = round(rowMeans(select(., P_INSEG_LUGARES_1:P_INSEG_LUGARES_16, P_INSEG_OSCURO_1:P_INSEG_DIA_2), na.rm = TRUE), 3))
 
-summary(enusc_reducida$indice_inseguridad)
-
 enusc_reducida <- enusc_reducida %>% mutate(indice_delincuencia = round(rowMeans(select(., P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO), na.rm = TRUE), 3))
 
-summary(enusc_reducida$indice_delincuencia)
+#Viendo los datos y considerando que los NA son minimos, tomamos la decisión de eliminar las filas que los contienen:
+
+enusc_reducida <- enusc_reducida %>%
+  filter(!is.na(indice_inseguridad)) %>%
+  filter(!is.na(indice_delincuencia))
+
+#Llevamos esta filtración a enusc_sociodemo  y enusc_inseguridad ya que la utilizaremos más adelante
+
+enusc_sociodemo = subset(enusc_reducida, select = c(rph_sexo, rph_idgen, rph_pertenencia_indigena, rph_nacionalidad, rph_nivel, rph_situacion_laboral_a, rph_edad, rph_nse))
+
+enusc_inseguridad = subset(enusc_reducida, select = c(P_AUMENTO_PAIS, P_AUMENTO_COM, P_AUMENTO_BARRIO, P_INSEG_LUGARES_1, P_INSEG_LUGARES_2, P_INSEG_LUGARES_3, P_INSEG_LUGARES_4, P_INSEG_LUGARES_5, P_INSEG_LUGARES_6, P_INSEG_LUGARES_7, P_INSEG_LUGARES_8, P_INSEG_LUGARES_9, P_INSEG_LUGARES_10, P_INSEG_LUGARES_11, P_INSEG_LUGARES_12, P_INSEG_LUGARES_13, P_INSEG_LUGARES_14, P_INSEG_LUGARES_15, P_INSEG_LUGARES_16, P_INSEG_OSCURO_1, P_INSEG_DIA_1, P_INSEG_OSCURO_2, P_INSEG_DIA_2))
 
 # Histogramas de índices
+
 enusc_reducida %>%
   select(indice_inseguridad, indice_delincuencia) %>%
   pivot_longer(cols = everything(), names_to = "indice", values_to = "valor") %>%
   ggplot(aes(x = valor)) +
-  geom_histogram(binwidth = 0.1, fill = "skyblue", color = "black") +
-  facet_wrap(~indice, scales = "free") +
+  geom_histogram(binwidth = 0.25, fill = "dodgerblue", color = "black") +
+  facet_wrap(~indice, scales = "free", nrow = 1) +
   theme_minimal() +
-  labs(title = "Distribución de Índices Generados",
-       x = "Valor del Índice",
-       y = "Frecuencia")
+  labs(
+    title = "Distribución de Índices de Variación de la Delincuencia e Inseguridad",
+    x = "Valor del Índice",
+    y = "Frecuencia"
+  ) +
+  theme(
+    plot.title = element_text(hjust = 0.5, size = 14, face = "bold"),
+    axis.title = element_text(size = 12),
+    axis.text = element_text(size = 10),
+    strip.text = element_text(size = 12, face = "bold")
+  ) +
+  scale_x_continuous(breaks = seq(1, 4, by = 0.5)) 
+
 ```
 
-En base a estadísticos descriptivos y la visualización gráfica, podemos establecer que tanto la percepción de inseguridad, como la percepción de aumento de la delincuencia se encuentran, en términos generales, en un rango medio-alto de la distribución. De tal manera, la mayor parte de los entrevistados se siente con niveles de inseguridad y percepción de aumento del nivel de la delincuencia en rangos medio-altos, evidenciando un evaluación en su mayoría negativa respecto a la condición de seguridad del país en la actualidad.
+En base a los estadísticos descriptivos y la visualización gráfica, podemos establecer que tanto la percepción de inseguridad, como la percepción de aumento de la delincuencia se encuentran, en términos generales, en un rango medio-alto de la distribución. De tal manera, la mayor parte de los entrevistados tiene una evaluación negativa respecto a la condición de seguridad del país en la actualidad.
 
-Matriz de correlación variables sociodemográficas e inseguridad
+## Matriz de correlación variables sociodemográficas e inseguridad
 
-```{r matriz-correlacion-sociodemo-inseguridad}
-#Creamos nuestra bbdd con variables sociodemograficas y de inseguridad
+```{r matriz-correlacion-sociodemo-inseguridad, echo=FALSE, warning=FALSE, results='hide'}
+# Creamos nuestra matriz de correlación
 
 indices <- enusc_reducida[, c("indice_inseguridad", "indice_delincuencia")]
 
-#Creamos nuestra matriz de correlación
 cormatrix_sdi <- cor(indices, enusc_sociodemo, use = "complete.obs")
 
 print(cormatrix_sdi)
 
+nrow(indices)  # Número de filas de indices
+nrow(enusc_sociodemo)
+```
+
+
+```{r matriz-correlacion-sociodemo-inseguridad-2, echo=FALSE, warning=FALSE}
 #Graficamos nuestra matriz de correlación rectangular
+
 corrplot(
   cormatrix_sdi, 
   is.corr = FALSE,  # Indica que no es una matriz de correlación simétrica
@@ -321,19 +376,22 @@ corrplot(
 )
 ```
 
-Como podemos observar, los coeficientes de correlación entre las variables sociodemográficas y los índices de inseguridad son débiles. Esto podría deberse a que la sensación de inseguridad es un fenómeno transversal en la población, lo que sugiere que es necesario identificar perfiles sociodemográficos específicos y analizar cómo se relacionan con la percepción de inseguridad. No obstante, los resultados ya permiten identificar que variables como el sexo, la edad y el nivel socioeconómico podrían ser factores relevantes en este fenómeno. De manera más limitada, la nacionalidad y la situación laboral también parecen tener cierta influencia en algunas ocasiones.
+Como podemos observar, los coeficientes de correlación entre las variables sociodemográficas y los índices de inseguridad son débiles. Esto podría deberse a que la sensación de inseguridad podría entenderse como un fenómeno transversal en la población, lo que sugiere que es necesario identificar perfiles sociodemográficos específicos y analizar cómo se relacionan con la percepción de inseguridad a nivel general. Más allá de lo anterior, los resultados permiten identificar que variables como el sexo, la edad y el nivel socioeconómico podrían ser factores relevantes en este fenómeno. De manera más limitada, la nacionalidad y la situación laboral también parecen tener cierta influencia en las percepciones de inseguridad y delincuencia en el territorio.
 
-```{r matriz-correlacion-sociodemo-inseguridad-2}
-#Creamos BBDD con variables sociodemograficas relevantes y variables de percepción de inseguridad
-
+```{r matriz-correlacion-sociodemo-delincuencia, echo=FALSE, warning=FALSE, results='hide'}
 sociodemo <- enusc_sociodemo[, c("rph_sexo", "rph_edad", "rph_nivel", "rph_nse")]
 
 #Creamos nuestra matriz de correlación
+
 cormatrix_isd <- cor(sociodemo, enusc_inseguridad, use = "complete.obs")
 
 print(cormatrix_isd)
+```
 
-#Graficamos nuestra matriz de correlación rectangular
+
+```{r matriz-correlacion-sociodemo-delincuencia-2, echo=FALSE, warning=FALSE}
+#Graficamos nuestra matriz de correlación rectangular   
+
 corrplot(
   cormatrix_isd, 
   is.corr = FALSE,  # Indica que no es una matriz de correlación simétrica
@@ -350,284 +408,191 @@ Esta matriz de correlación refuerza en cierta medida nuestras observaciones. Pa
 
 Asimismo, las correlaciones positivas observadas en las variables de sexo y edad, en contraste con las negativas asociadas al nivel socioeconómico y educativo, indican patrones de comportamiento diversos. Esto resalta la necesidad de diferenciar estos comportamientos a través de perfiles sociodemográficos más específicos que los capturen de manera adecuada. Asimismo, una mayor especificidad en dichos perfiles debería hacer las correlaciones en torno a la inseguridad más claras.
 
-#Estadísticos Shiny
 
-```{r estadisticos-shiny}
+##T-test
 
-set.seed(123)
-enusc_shiny <- data.frame(
-  rph_sexo = sample(1:2, 100, replace = TRUE),       # Sexo (1 o 2)
-  rph_edad = sample(1:7, 100, replace = TRUE),       # Edad (1 a 7)
-  rph_nse = sample(1:3, 100, replace = TRUE),        # NSE (1 a 3)
-  rph_nivel = sample(1:4, 100, replace = TRUE),      # Nivel educativo (1 a 4)
-  indice_inseguridad = sample(1:4, 100, replace = TRUE),  
-  indice_delincuencia = sample(1:3, 100, replace = TRUE)
-)
+Observando diferencias intra-grupales en variables sociodemográficas, según percepción de inseguridad utilizando índices construidos.
 
-# Interfaz de usuario
-ui <- fluidPage(
-  titlePanel("Filtrar Datos y Estadísticas de Índices"),
-  sidebarLayout(
-    sidebarPanel(
-      h3("Filtros Sociodemográficos"),
-      selectInput("sexo", "Sexo:", choices = c("Todos" = "all", "1", "2")),
-      selectInput("edad", "Edad:", choices = c("Todos" = "all", 1:7)),
-      selectInput("nse", "NSE:", choices = c("Todos" = "all", 1:3)),
-      selectInput("nivel", "Nivel Educacional:", choices = c("Todos" = "all", 1:4)),
-      actionButton("filtrar", "Aplicar Filtros")
-    ),
-    mainPanel(
-      h3("Estadísticas de Índices"),
-      verbatimTextOutput("estadisticasIndices")
-    )
-  )
-)
+```{r t-test, echo=FALSE, warning=FALSE, results='hide'}
+# 1. Diferencias en variable de Sexo
 
-# Servidor
-server <- function(input, output, session) {
-  datos_filtrados <- eventReactive(input$filtrar, {
-    df <- enusc_shiny
-    
-    # Aplicar filtros sociodemográficos
-    if (input$sexo != "all") df <- df %>% filter(rph_sexo == as.numeric(input$sexo))
-    if (input$edad != "all") df <- df %>% filter(rph_edad == as.numeric(input$edad))
-    if (input$nse != "all") df <- df %>% filter(rph_nse == as.numeric(input$nse))
-    if (input$nivel != "all") df <- df %>% filter(rph_nivel == as.numeric(input$nivel))
-    
-    return(df)
-  })
-
-  # Calcular y mostrar las estadísticas
-  output$estadisticasIndices <- renderPrint({
-    df <- datos_filtrados()
-    
-    # Verificar si hay suficientes datos
-    if (nrow(df) > 1) {
-      # Calcular estadísticas para los índices
-      estadisticas_inseguridad <- c(
-        Media = mean(df$indice_inseguridad),
-        Mediana = median(df$indice_inseguridad),
-        Moda = as.numeric(names(sort(table(df$indice_inseguridad), decreasing = TRUE)[1])),  # Moda
-        Desviacion = sd(df$indice_inseguridad),  # Desviación estándar
-        Asimetria = sum((df$indice_inseguridad - mean(df$indice_inseguridad))^3) / 
-          (length(df$indice_inseguridad) * sd(df$indice_inseguridad)^3),  # Asimetría
-        Rango = range(df$indice_inseguridad)
-      )
-      
-      estadisticas_delincuencia <- c(
-        Media = mean(df$indice_delincuencia),
-        Mediana = median(df$indice_delincuencia),
-        Moda = as.numeric(names(sort(table(df$indice_delincuencia), decreasing = TRUE)[1])),  # Moda
-        Desviacion = sd(df$indice_delincuencia),  # Desviación estándar
-        Asimetria = sum((df$indice_delincuencia - mean(df$indice_delincuencia))^3) / 
-          (length(df$indice_delincuencia) * sd(df$indice_delincuencia)^3),  # Asimetría
-        Rango = range(df$indice_delincuencia)
-      )
-      
-      cat("Índice de Inseguridad:\n")
-      print(estadisticas_inseguridad)
-      
-      cat("\nÍndice de Delincuencia:\n")
-      print(estadisticas_delincuencia)
-    } else {
-      cat("No hay suficientes datos para calcular las estadísticas.")
-    }
-  })
-}
-
-# Ejecutar la aplicación
-shinyApp(ui, server)
-```
-
-#Correlación Shiny
-
-```{r correlacion-shiny}
-set.seed(123)
-enusc_shiny <- data.frame(
-  rph_sexo = sample(1:2, 100, replace = TRUE),       # Sexo (1 o 2)
-  rph_edad = sample(1:7, 100, replace = TRUE),       # Edad (1 a 7)
-  rph_nse = sample(1:3, 100, replace = TRUE),        # NSE (1 a 3)
-  rph_nivel = sample(1:4, 100, replace = TRUE),      # Nivel educativo (1 a 4)
-  indice_inseguridad = rnorm(100, mean = 50, sd = 10),  # Inseguridad
-  indice_delincuencia = rnorm(100, mean = 30, sd = 5)   # Delincuencia
-)
-
-# Interfaz de usuario
-ui <- fluidPage(
-  titlePanel("Filtrar Datos y Matriz de Correlación"),
-  sidebarLayout(
-    sidebarPanel(
-      h3("Filtros Sociodemográficos"),
-      selectInput("sexo", "Sexo:", choices = c("Todos" = "all", "1", "2")),
-      selectInput("edad", "Edad:", choices = c("Todos" = "all", 1:7)),
-      selectInput("nse", "NSE:", choices = c("Todos" = "all", 1:3)),
-      selectInput("nivel", "Nivel Educacional:", choices = c("Todos" = "all", 1:4)),
-      actionButton("filtrar", "Aplicar Filtros")
-    ),
-    mainPanel(
-      h3("Matriz de Correlación"),
-      plotOutput("matrizCorrelacion"),
-      textOutput("mensajeError")
-    )
-  )
-)
-
-# Servidor
-server <- function(input, output, session) {
-  datos_filtrados <- eventReactive(input$filtrar, {
-    df <- enusc_shiny
-    
-    # Aplicar filtros sociodemográficos
-    if (input$sexo != "all") df <- df %>% filter(rph_sexo == as.numeric(input$sexo))
-    if (input$edad != "all") df <- df %>% filter(rph_edad == as.numeric(input$edad))
-    if (input$nse != "all") df <- df %>% filter(rph_nse == as.numeric(input$nse))
-    if (input$nivel != "all") df <- df %>% filter(rph_nivel == as.numeric(input$nivel))
-    
-    return(df)
-  })
-
-  output$matrizCorrelacion <- renderPlot({
-    df <- datos_filtrados()
-    
-    # Verificar si hay suficientes datos para la correlación
-    if (nrow(df) > 1) {
-      # Seleccionar variables sociodemográficas y de índices
-      sociodemograficas <- df %>% select(rph_sexo, rph_edad, rph_nse, rph_nivel)
-      indices <- df %>% select(indice_inseguridad, indice_delincuencia)
-      
-      # Crear la matriz de correlación
-      cormatrix_sdi <- cor(sociodemograficas, indices, use = "complete.obs")
-      
-      # Transponer la matriz para que las variables sociodemográficas estén en las columnas
-      cormatrix_sdi_transpuesta <- t(cormatrix_sdi)
-      
-      # Graficar la matriz con corrplot
-      corrplot(
-        cormatrix_sdi_transpuesta, 
-        is.corr = FALSE,  # Indica que no es una matriz de correlación simétrica
-        method = "color", 
-        col = colorRampPalette(c("#6D9EC1", "white", "#E46726"))(200), 
-        addCoef.col = "black",  # Añade coeficientes en negro
-        tl.col = "black",  # Color del texto de las etiquetas
-        tl.srt = 45  # Rotación de las etiquetas
-      )
-    } else {
-      plot.new()
-      title("No hay suficientes datos para calcular la correlación")
-    }
-  })
-
-  # Mensaje de error si no hay datos suficientes
-  output$mensajeError <- renderText({
-    df <- datos_filtrados()
-    
-    if (nrow(df) <= 1) {
-      "No hay suficientes datos después de aplicar los filtros. Por favor, ajusta los filtros."
-    } else {
-      NULL
-    }
-  })
-}
-
-# Ejecutar la aplicación
-shinyApp(ui, server)
-```
-
-```{r t-test}
 # A continuación, se realiza un cruce de nuestros índices de inseguridad con algunas de nuestras variables sociodemográficas.
 
 enusc_reducida %>%
   group_by(rph_sexo) %>%
   summarise(media_inseguridad = mean(indice_inseguridad, na.rm = TRUE),
             media_percepcion = mean(indice_delincuencia, na.rm = TRUE))
+```
 
 
+```{r t-test-2, echo=FALSE, warning=FALSE}
 # Prueba t para índice de inseguridad por sexo
 t_test_inseguridad_sexo <- t.test(indice_inseguridad ~ rph_sexo, data = enusc_reducida)
-print(t_test_inseguridad_sexo)
+
+#Extraemos los resultados relevantes: 
+t_test_results1 <- data.frame(
+  "Estadístico t" = t_test_inseguridad_sexo$statistic,
+  "Valor p" = t_test_inseguridad_sexo$p.value,
+  "Grados de libertad" = t_test_inseguridad_sexo$parameter,
+  "Media del grupo 1" = t_test_inseguridad_sexo$estimate[1],
+  "Media del grupo 2" = t_test_inseguridad_sexo$estimate[2],
+  "Intervalo de confianza (Inf)" = t_test_inseguridad_sexo$conf.int[1],
+  "Intervalo de confianza (Sup)" = t_test_inseguridad_sexo$conf.int[2]
+)
+
+#Graficamos
+kable(t_test_results1, caption = "Prueba T para Indice de Inseguridad por Sexo")
 
 # Prueba t para índice de percepción por sexo
 t_test_percepcion_sexo <- t.test(indice_delincuencia ~ rph_sexo, data = enusc_reducida)
-print(t_test_percepcion_sexo)
+
+#Extraemos los resultados
+t_test_results2 <- data.frame(
+  "Estadístico t" = t_test_percepcion_sexo$statistic,
+  "Valor p" = t_test_inseguridad_sexo$p.value,
+  "Grados de libertad" = t_test_inseguridad_sexo$parameter,
+  "Media del grupo 1" = t_test_inseguridad_sexo$estimate[1],
+  "Media del grupo 2" = t_test_inseguridad_sexo$estimate[2],
+  "Intervalo de confianza (Inf)" = t_test_inseguridad_sexo$conf.int[1],
+  "Intervalo de confianza (Sup)" = t_test_inseguridad_sexo$conf.int[2]
+)
+
+kable(t_test_results2, caption = "Prueba T para Indice de Delincuencia por Sexo")
 ```
 
 En base a las pruebas T para verificar diferencias entre grupos, podemos observar que las mujeres reportan un nivel promedio de inseguridad significativamente mayor que los hombres. Aunque la diferencia es pequeña, es estadísticamente significativa debido al gran tamaño muestral.
 
-Análogamente, las mujeres tienen un promedio significativamente más alto en el índice de percepción de delincuencia que los hombres.Aunque la diferencia es pequeña, sigue siendo estadísticamente significativa.
+Análogamente, las mujeres tienen un promedio significativamente más alto en el índice de percepción de delincuencia que los hombres. De igual forma, aunque esa diferencia es pequeña, sigue siendo estadísticamente significativa.
 
-```{r anova}
+## Anova
+
+```{r anova-1, echo=FALSE, warning=FALSE, results='hide'}
+# 2. Diferencias en variable de Nivel Socioeconómico
+
 enusc_reducida %>%
   group_by(rph_nse) %>%
   summarise(media_inseguridad = mean(indice_inseguridad, na.rm = TRUE),
             media_percepcion = mean(indice_delincuencia, na.rm = TRUE))
+```
 
+
+```{r anova-1.2, echo=FALSE, warning=FALSE}
 # ANOVA para índice de inseguridad por NSE
 anova_inseguridad_nse <- aov(indice_inseguridad ~ factor(rph_nse), data = enusc_reducida)
-summary(anova_inseguridad_nse)
+#Extraemos resultados relevantes:
+anova_inseguridad_nse_table <- summary(anova_inseguridad_nse)
+anova_inseguridad_nse_table <- as.data.frame(anova_inseguridad_nse_table[[1]])
+#Graficamos
+kable(anova_inseguridad_nse_table, caption = "Anova para indice de inseguridad y nivel socioeconomico")
 
-# ANOVA para índice de percepción variación delincuencia por NSE
+# ANOVA para índice de delincuencia variación delincuencia por NSE
 anova_percepcion_nse <- aov(indice_delincuencia ~ factor(rph_nse), data = enusc_reducida)
-summary(anova_percepcion_nse)
+#Extraemos lo relevante
+anova_percepcion_nse_table <- summary(anova_percepcion_nse)
+anova_percepcion_nse_table <- as.data.frame(anova_percepcion_nse_table[[1]])
+#Graficamos
+kable(anova_percepcion_nse_table, caption = "Anoca para indice de delincuencia y nivel socioeconomico")
 
 # Comparaciones post hoc para NSE
 # Índice de inseguridad por NSE
 tukey_inseguridad_nse <- TukeyHSD(anova_inseguridad_nse)
-print(tukey_inseguridad_nse)
+#Extraemos el analisis:
+tukey_inseguridad_nse_table <- as.data.frame(tukey_inseguridad_nse[[1]])
+# Graficamos
+kable(tukey_inseguridad_nse_table, caption = "Prueba de Tukey para índice de inseguridad y nivel socioeconómico")
 
-# Índice de percepción por NSE
+# Índice de delincuencia por NSE
 tukey_percepcion_nse <- TukeyHSD(anova_percepcion_nse)
-print(tukey_percepcion_nse)
+#Extraemos lo relevante
+tukey_percepcion_nse_table <- as.data.frame(tukey_percepcion_nse[[1]])
+#Graficamos
+kable(tukey_percepcion_nse_table, caption = "Prueba de Tukey para índice de delincuencia y nivel socioeconómico")
 ```
+
+Respecto a las diferencias en Índice de inseguridad según NSE:
 
 En base a los tests ANOVA, es posible observar diferencias estadísticamente significativas entre grupos de nivel socioeconómico, según su percepción de inseguridad y percepción de variación de la delincuencia. De tal manera, el NSE de cada persona influye de manera relevante en tales percepciones. En base a los resultados Tukey, podemos aseverar que a medida que aumenta el nivel socioeconómico, la percepción de inseguridad disminuye de manera consistente. Esto podría deberse a mejores condiciones de vida, entornos más protegidos o menor exposición a riesgos en los grupos con NSE alto.
 
-En términos generales, se observan diferencias significativas entre personas pertenecientes a NSE Alto, respecto a los grupos que se ubican en NSE Medio y NSE Bajo.
+Los resultados indican que las personas con un NSE bajo perciben mayor inseguridad, seguido de las de NSE medio, con el NSE alto mostrando significativamente menor percepción de inseguridad.
 
-```{r anova-2}
+Respecto a las diferencias en Índice de percepción de delincuencia según NSE:
+
+Aunque la percepción de aumento de delincuencia es ligeramente mayor en los NSE bajos y medios, las diferencias entre estos niveles no son significativas. Sin embargo, el NSE alto muestra una percepción significativamente menor.
+
+En resumen y, en base a los tests ANOVA, es posible observar diferencias estadísticamente significativas entre grupos de nivel socioeconómico, según su percepción de inseguridad y percepción de variación de la delincuencia. Así, el NSE de cada persona influye de manera relevante en tales percepciones. En base a los resultados Tukey, podemos aseverar que a medida que aumenta el nivel socioeconómico, la percepción de inseguridad disminuye. Esto podría deberse a mejores condiciones de vida, entornos más protegidos o menor exposición a riesgos en los grupos con NSE alto.
+
+En términos de magnitud, las mayores diferencias significativas se encuentran entre personas pertenecientes a NSE Alto, respecto a los grupos que se ubican en NSE Medio y NSE Bajo.
+
+```{r anova-2, echo=FALSE, warning=FALSE, results='hide'}
+# 3. Diferencias en variable de Nivel educacional
+
 enusc_reducida %>%
   group_by(rph_nivel) %>%
   summarise(media_inseguridad = mean(indice_inseguridad, na.rm = TRUE),
             media_percepcion = mean(indice_delincuencia, na.rm = TRUE))
+```
 
+
+```{r anova-2.1, echo=FALSE, warning=FALSE}
 # ANOVA para índice de inseguridad por nivel educacional
 anova_inseguridad_nivel <- aov(indice_inseguridad ~ factor(rph_nivel), data = enusc_reducida)
-summary(anova_inseguridad_nivel)
+anova_inseguridad_nivel_table <- summary(anova_inseguridad_nivel)
+anova_inseguridad_nivel_table <- as.data.frame(anova_inseguridad_nivel_table[[1]])
+kable(anova_inseguridad_nivel_table, caption = "Anova para indice de inseguridad con nivel educacional")
 
-# ANOVA para índice de percepción por nivel educacional
+# ANOVA para índice de delincuencia por nivel educacional
 anova_percepcion_nivel <- aov(indice_delincuencia ~ factor(rph_nivel), data = enusc_reducida)
-summary(anova_percepcion_nivel)
+anova_percepcion_nivel_table <- summary(anova_percepcion_nivel)
+anova_percepcion_nivel_table <- as.data.frame(anova_percepcion_nivel_table[[1]])
+kable(anova_percepcion_nivel_table, caption = "Anova para indice de delincuencia con nivel educacional")
 
 # Comparaciones post hoc para Nivel Educacional
 # Índice de inseguridad por Nivel Educacional
 tukey_inseguridad_nivel <- TukeyHSD(anova_inseguridad_nivel)
-print(tukey_inseguridad_nivel)
+tukey_inseguridad_nivel_table <- as.data.frame(tukey_inseguridad_nivel[[1]])
+kable(tukey_inseguridad_nse_table, caption = "Tukey para indice de inseguridad con nivel educacional")
 
 # Índice de percepción por Nivel Educacional
 tukey_percepcion_nivel <- TukeyHSD(anova_percepcion_nivel)
-print(tukey_percepcion_nivel)
+tukey_percepcion_nivel_table <- as.data.frame(tukey_percepcion_nivel[[1]])
+kable(tukey_percepcion_nivel_table, caption = "Tukey para indice de delincuencia y nivel educacional")
 
-table(enusc_reducida$rph_nivel)
-prop.table(table(enusc_reducida$rph_nivel)) * 100
+frecuencias <- table(enusc_reducida$rph_nivel)
+
+# Proporciones en porcentaje de la variable rph_nivel
+proporciones <- prop.table(frecuencias) * 100
+
+# Combinamos las frecuencias y proporciones en un solo data frame
+tabla_completa <- data.frame(Frecuencia = frecuencias, Proporción = proporciones)
+
+# Mostramos la tabla con kable
+kable(tabla_completa, caption = "Frecuencia y Proporción de rph_nivel")
 
 ```
 
-Finalmente, respecto a la variación de los índices construidos en base al nivel educacional, podemos indicar que también existen diferencias estadísticamente significativas por grupo. Las mayores diferencias se dan entre aquellas personas que asistieron a la educación básica y la media, respecto a las personas que asistieron a la educación superior. Así, a mayor educación, se observa una tendencia a sentir menores niveles de inseguridad.
+Respecto a las diferencias en Índice de inseguridad según Nivel Educacional:
 
-Es importante destacar que tal tendencia no se cumple al analizar a las personas que declaran nunca haber asistido, dado que, prácticamente, no se encontraron diferencias significativas entre este y los demás grupos. Es probable que este fenómeno se deba a la baja proporción de personas que no tienen educación formal en Chile, con lo que es muy difícil que la muestra de la encuesta analizada sea capaz de capturar, de manera representativa, la realidad social de las personas 365 personas de la encuesta (menos de un 1% de la muestra), que se encuentran en tal condición.
+Las personas con educación secundaria tienen la percepción más alta de inseguridad, seguidas por quienes poseen educación básica y superior. Esto puede reflejar una exposición diferente a entornos sociales y económicos según el nivel educativo. Las personas con educación superior tienden a reportar menor percepción de inseguridad, lo que podría estar relacionado con mayor acceso a recursos, mejor calidad de vida o diferentes entornos habitacionales.
 
-#Análisis de Componentes Principales (PCA)
+Más allá de lo anterior, en este caso, no es posible establecer que a medida que aumenta el nivel educacional, disminuye la percepción de inseguridad. Esto dado que las personas con educación secundaria muestran mayor percepción de este fenómeno, al compararlas con las personas que poseen educación básica o que no poseen estudios formales.
 
-```{r pca}
+En relación a las diferencias en Índice de percepción de delincuencia según Nivel Educacional:
+
+Las diferencias son menos marcadas, pero el nivel educacional también influye. Las personas con educación secundaria tienen una percepción ligeramente mayor de aumento en delincuencia, mientras que las personas con educación superior reportan valores más bajos.
+
+Es importante destacar que la tendencia respecto a que existe menor inseguridad en personas que niveles educativos altos no se cumple al analizar a las personas que declaran nunca haber asistido, dado que, prácticamente, no se encontraron diferencias significativas entre este y los demás grupos. Es probable que este fenómeno se deba a la baja proporción de personas que no tienen educación formal en Chile, con lo que es muy difícil que la muestra de la encuesta analizada sea capaz de capturar, de manera representativa, la realidad social de las personas 365 personas de la encuesta (menos de un 1% de la muestra), que se encuentran en tal condición.
+
+# Análisis de Componentes Principales (PCA)
+
+```{r pca, echo=FALSE, warning=FALSE}
 # Selección de variables para PCA
 
-# Seleccionamos únicamente las 20 variables que miden percepción de inseguridad en diferentes contextos.
-# Estas variables están diseñadas para capturar la percepción subjetiva de inseguridad en situaciones y lugares específicos.
+# Seleccionamos únicamente las 20 variables que miden percepción de inseguridad en diferentes contextos. Estas variables están diseñadas para capturar la percepción subjetiva de inseguridad en situaciones y lugares específicos.
 
 pca_variables_inseguridad <- enusc_inseguridad %>%
   select(P_INSEG_LUGARES_1:P_INSEG_LUGARES_16, P_INSEG_OSCURO_1:P_INSEG_DIA_2)
 
-# Esta selección asegura que el análisis se enfoque exclusivamente en las percepciones de inseguridad
-# sin incluir otras variables externas que podrían distorsionar los resultados del PCA.
+# Esta selección asegura que el análisis se enfoque exclusivamente en las percepciones de inseguridad sin incluir otras variables externas que podrían distorsionar los resultados del PCA.
 
 # Para poder continuar con el Análisis de Componentes Principales, se decide sustituir los NA´s por la media de cada una
 # de las variables. De tal manera, se busca no distorsionar mayormente los estadísticos de cada una de las variables a incluir en el PCA.
@@ -642,9 +607,7 @@ pca_variables_inseguridad <- as.data.frame(lapply(pca_variables_inseguridad, fun
 }))
 
 
-# A continuación, escalamos las variables para que tengan media 0 y desviación estándar 1.
-# Esto asegura que todas las variables contribuyan de manera equitativa al análisis,
-# independientemente de sus unidades o rangos originales.
+# A continuación, escalamos las variables para que tengan media 0 y desviación estándar 1. Esto asegura que todas las variables contribuyan de manera equitativa al análisis, independientemente de sus unidades o rangos originales.
 
 pca_variables_scaled <- scale(pca_variables_inseguridad)
 
@@ -654,10 +617,16 @@ pca_result <- prcomp(pca_variables_scaled, center = FALSE, scale. = FALSE)
 
 # De tal manera, analizamos la importancia de los componentes principales en términos de varianza explicada.
 
-summary(pca_result)
+summary_pca <- summary(pca_result)
+importance_pca <- as.data.frame(summary_pca$importance)
+kable(importance_pca, caption = "Importancia de los Componentes Principales en Términos de Varianza Explicada")
 
-# Revisamos las cargas de los componentes principales
-pca_result$rotation
+# Finalmente, revisamos las cargas de los componentes principales
+
+rotation_pca <- as.data.frame(pca_result$rotation)
+
+# Mostrar las cargas con kable
+kable(rotation_pca, caption = "Cargas de los Componentes Principales")
 ```
 
 Como podemos observar, los resultados muestran que los primeros 4 componentes explican el 50.8% de la varianza total:
@@ -666,7 +635,7 @@ PC1: 32.52% - Captura un patrón generalizado de percepción de inseguridad. PC2
 
 Una vez que tenemos indicios de posibles componentes a retener, creamos un Screen Plot para visualizar la varianza explicada por cada componente principal.
 
-```{r varianza-pca}
+```{r varianza-pca, echo=FALSE, warning=FALSE}
 scree_data <- data.frame(
   PC = factor(paste0("PC", 1:length(pca_result$sdev)), levels = paste0("PC", 1:length(pca_result$sdev))),
   Var_Explained = (pca_result$sdev^2) / sum(pca_result$sdev^2) * 100
@@ -693,7 +662,7 @@ componentes_retenidos <- data.frame(
 ) %>%
   filter(Eigenvalue > 1)
 
-print(componentes_retenidos)
+kable(componentes_retenidos, caption = "Componentes retenidos en el Análisis de Componentes Principales")
 
 # Los eigenvalores superiores a 1 respaldan la retención de 4 componentes principales.
 # Este resultado es consistente con el análisis gráfico y la proporción acumulada de varianza explicada.
@@ -701,6 +670,11 @@ print(componentes_retenidos)
 # A continuación, revisamos las cargas de las variables en los componentes principales.
 
 pca_cargas <- as.data.frame(pca_result$rotation)
+kable(
+  pca_cargas, 
+  caption = "Cargas de las variables en los componentes principales", 
+  digits = 3 # Redondear a 3 decimales para mejor legibilidad
+)
 
 # Las cargas indican la influencia de cada variable en un componente.
 # Cargas altas (positivas o negativas) revelan qué variables son más representativas de un componente en particular.
@@ -710,39 +684,49 @@ En base al análisis realizado, se decide por retener cuatro componentes princip
 
 PC1: "Percepción General de Inseguridad"
 
-Este componente refleja un patrón amplio de inseguridad, capturando variables como `P_INSEG_LUGARES_1`, `P_INSEG_LUGARES_2`, y `P_INSEG_LUGARES_3`. Estas variables tienen cargas altas y representan situaciones comunes de inseguridad, como caminar por el barrio o estar en espacios públicos. Este componente explica el 32.5% de la varianza total.
+Este componente refleja un patrón amplio de inseguridad, capturando variables como "P_INSEG_LUGARES_1", "P_INSEG_LUGARES_2", y "P_INSEG_LUGARES_3". Estas variables tienen cargas altas y representan situaciones comunes de inseguridad, como caminar por el barrio o estar en espacios públicos. Este componente explica el 32.5% de la varianza total.
 
 PC2: "Inseguridad en Lugares Habituales"
 
-Este componente está dominado por variables como \`P_INSEG_OSCURO_2 (seguridad en casa cuando está oscuro), P_INSEG_DIA_2 (seguridad en casa durante el día) y P_INSEG_LUGARES_14 (seguridad en lugar de trabajo). Captura sensación de seguridad en lugares muy familiares para las personas, como su hogar o su lugar de trabajo, explicando un 7.3% de la varianza.
+Este componente está dominado por variables como "P_INSEG_OSCURO_2" (inseguridad en casa cuando está oscuro), "P_INSEG_DIA_2" (inseguridad en casa durante el día) y "P_INSEG_LUGARES_14" (inseguridad en lugar de trabajo). Captura sensación de inseguridad en lugares muy familiares para las personas, como su hogar o su lugar de trabajo, explicando un 7.3% de la varianza.
 
 PC3: "Inseguridad en Puntos de espera de Transporte Público"
 
-Este componente agrupa variables como `P_INSEG_LUGARES_8` (terminales de buses o ferrocarriles) y `P_INSEG_LUGARES_2` (espera de transporte público). Refleja la inseguridad asociada a la movilidad y los entornos relacionados, explicando un 5.8% de la varianza.
+Este componente agrupa variables como "P_INSEG_LUGARES_8" (terminales de buses o ferrocarriles) y "P_INSEG_LUGARES_2" (espera de transporte público). Refleja la inseguridad asociada a la movilidad y los entornos relacionados, explicando un 5.8% de la varianza.
 
 PC4: "Inseguridad por Traslados"
 
 Componente que refleja sensación de inseguridad a partir de traslados en transporte público, ya sea micros o colectivos. Se encuentra relacionado con componente N° 3.
 
-Finalmente, mostramos gráficamente cómo las variables contribuyen a PC1 y PC2.
+## Mostramos gráficamente cómo las variables contribuyen a PC1 y PC2.
 
-```{r variables-inseguridad-pca}
+```{r variables-inseguridad-pca, echo=FALSE, warning=FALSE}
+# Creamos BBDD para poder graficar
+
 pca_cargas_long <- pca_cargas %>%
   rownames_to_column(var = "Variable") %>%
-  pivot_longer(cols = starts_with("PC"), names_to = "Componente", values_to = "Carga")
+  pivot_longer(cols = starts_with("PC"), names_to = "Componente", values_to = "Carga") %>%
+  mutate(Componente = case_when(
+    Componente == "PC1" ~ "Percepción General de Inseguridad",
+    Componente == "PC2" ~ "Inseguridad en Lugares Habituales",
+    TRUE ~ Componente
+  ))
 
-ggplot(pca_cargas_long %>% filter(Componente %in% c("PC1", "PC2")), 
+# Generamos el gráfico con las cargas de variables a componentes principales
+
+ggplot(pca_cargas_long %>% filter(Componente %in% c("Percepción General de Inseguridad", "Inseguridad en Lugares Habituales")), 
        aes(x = reorder(Variable, Carga), y = Carga, fill = Componente)) +
   geom_bar(stat = "identity", position = "dodge") +
   coord_flip() +
-  labs(title = "Cargas de las Variables en PC1 y PC2",
-       x = "Variable",
+  labs(title = "Cargas de las Variables en Componentes Principales",
+       x = "Variables",
        y = "Carga",
        fill = "Componente") +
   theme_minimal()
+
 ```
 
-Interpretación del gráfico de cargas en los primeros dos componentes principales (PC1 y PC2)
+## Interpretación del gráfico de cargas en los primeros dos componentes principales
 
 PC1: "Percepción General de Inseguridad"
 
@@ -754,9 +738,9 @@ PC2: "Inseguridad en Lugares Habituales"
 
 Este componente captura variables asociadas con espacios privados o habituales, como el hogar y el trabajo. Las variables P_INSEG_DIA_2 (inseguridad al estar solo/a en casa durante el día) y P_INSEG_OSCURO_2 (inseguridad al estar solo/a en casa durante la noche), tienen cargas predominantes en este componente. Además, aparecen variables relacionadas con espacios laborales y educativos, como P_INSEG_LUGARES_14 (inseguridad en el lugar de trabajo) y P_INSEG_LUGARES_15 (inseguridad en el lugar de estudio).
 
-De tal manera, PC2 representa inseguridad en contextos donde las personas suelen sentirse más seguras, como su hogar o trabajo. Este resultado es relevante porque sugiere que, para algunos grupos, la percepción de inseguridad trasciende los espacios públicosy afecta su percepción en lugares privados o controlados. Por ello, PC2 puede denominarse "Inseguridad en Lugares Habituales".
+De tal manera, PC2 representa inseguridad en contextos donde las personas suelen sentirse más seguras, como su hogar o trabajo. Este resultado es relevante porque sugiere que, para algunos grupos, la percepción de inseguridad trasciende los espacios públicos y afecta su percepción en lugares privados o controlados. Por ello, PC2 puede denominarse "Inseguridad en Lugares Habituales".
 
-```{r dataframe-pca, results='hide'}
+```{r dataframe-pca, results='hide', echo=FALSE, warning=FALSE}
 # Finalmente, procedemos a guardar nuestros componentes principales en un DF
 
 pca_scores <- predict(pca_result)
@@ -767,11 +751,13 @@ pca_scores_df <- as.data.frame(pca_scores[, 1:4])
 names(pca_scores_df) <- c("inseguridad_general", "inseguridad_habituales", "inseguridad_espera", "inseguridad_transporte")
 ```
 
-#Análisis de clusters
+# Análisis de clusters
 
-##Regresión Lineal
+Una vez ya definimos nuestros cuatro componentes principales, y antes de realizar el análisis de clusters, se procede a realizar modelos predictivos para dos de los cuatro principales encontrados y los dos índices construidos. Con ello, buscamos seguir explorando respecto a las variables, en este caso sociodemográficas, que podrían explicar nuestro fenómeno de interés, la percepción de inseguridad en la sociedad chilena.
 
-```{r regresion-lineal}
+## Regresión Lineal
+
+```{r regresion-lineal, echo=FALSE, warning=FALSE}
 # 1. Preparación de datos
 
 # Combinamos los componentes principales, los índices y las variables sociodemográficas completas en un solo DataFrame.
@@ -784,11 +770,9 @@ data_model <- cbind(
 
 # Verificamos la estructura de los datos para asegurar que las combinaciones se realizaron correctamente.
 
-head(data_model)
+kable(head(data_model), caption = "Primeras filas del Modelo de Datos Combinados con Componentes Principales")
 
-# Convertimos variables categóricas en factores.
-
-# Esto garantiza que los modelos interpreten correctamente estas variables como categorías en lugar de valores numéricos.
+# Convertimos variables categóricas en factores.Esto garantiza que los modelos interpreten correctamente estas variables como categorías en lugar de valores numéricos.
 
 data_model$rph_sexo <- as.factor(data_model$rph_sexo)
 data_model$rph_nivel <- as.factor(data_model$rph_nivel)
@@ -798,13 +782,48 @@ data_model$rph_pertenencia_indigena <- as.factor(data_model$rph_pertenencia_indi
 data_model$rph_nacionalidad <- as.factor(data_model$rph_nacionalidad)
 data_model$rph_idgen <- as.factor(data_model$rph_idgen)
 
+# Adicionalmente, procedemos a recodificar variable de edad, para facilitar la posterior interpretación de los resultados.
+
+data_model <- data_model %>%
+  mutate(rph_edad = case_when(
+    rph_edad %in% c(1, 2, 3) ~ 1,
+    rph_edad %in% c(4, 5, 6) ~ 2,
+    rph_edad == 7 ~ 3
+  ))
+
+# Observamos la distribución de la nueva variable
+
+kable(table(data_model$rph_edad), caption = "Distribución de la Variable rph_edad")
+
+# Calculamos y mostramos la proporción con kable
+kable(prop.table(table(data_model$rph_edad)) * 100, caption = "Proporción de la Variable rph_edad (%)")
+
+# Vemos que la mayor parte de las personas encuestadas son adultas (47,4%), seguidos por las personas jóvenes y adultas/jóvenes (38,1%) . La menor proporción de la población es la representada por personas adultas mayores (14,5%).
+
+# Finalmente, procedemos a eliminar los registros de personas que no tienen nivel educacional. Esto con la finalidad de que estos datos no distorsionen los resultados arrojados por los modelos de regresión, considerando que la suma de los casos no alcanza a representar el 1% de la muestra
+
+kable(table(data_model$rph_nivel), caption = "Numero de casos por nivel educacional")
+
+# Filtramos la BBDD "data_model"
+
+data_model <- data_model %>%
+  filter(rph_nivel != 0)
+
+# Volvemos a convertir rph_nivel en factor para ajustar las categorías
+
+data_model$rph_nivel <- as.factor(data_model$rph_nivel)
+
+data_model$rph_nivel <- droplevels(data_model$rph_nivel)
+
+# Verificamos la nueva estructura de la variable rph_nivel
+
+kable(table(data_model$rph_nivel), caption = "Nueva estructura de nivel educacional")
+
 # 2. Modelos predictivos
 
-# Usaremos regresiones lineales para analizar cómo las variables sociodemográficas influyen en:
-# - 2 componentes principales
-# - Los 2 índices de inseguridad y percepción de delincuencia
+# Usaremos modelos de regresión lineal para analizar la manera en que las variables sociodemográficas influyen en 2 componentes principales y en los 2 índices, tanto de inseguridad como de variación de la percepción de delincuencia
 
-# Modelo para el primer componente principal: "inseguridad_general"
+# Así, construimos el modelo para el primer componente principal: "inseguridad_general"
 # Este componente captura una visión amplia de la percepción de inseguridad en lugares públicos y cotidianos.
 
 modelo_cp1 <- lm(
@@ -812,51 +831,68 @@ modelo_cp1 <- lm(
     rph_pertenencia_indigena + rph_nacionalidad + rph_idgen,
   data = data_model
 )
-summary(modelo_cp1)
-```
+#Graficamos la tabla
+summary_modelo_cp1 <- summary(modelo_cp1)
 
-###Resumen del modelo para evaluar el ajuste y la relevancia de las variables.
+# Convertimos el resumen en una tabla que pueda ser pasada a kable
+summary_table <- as.data.frame(summary_modelo_cp1$coefficients)
+
+# Mostramos la tabla con kable
+kable(summary_table, caption = "Resumen del Modelo CP1")
+```
 
 Resumen del modelo:
 
-rph_edad: La edad tiene un efecto positivo significativo sobre la inseguridad general. Cada unidad de aumento en la edad se asocia con un incremento de 0.1467 en el componente inseguridad_general.
+rph_edad: La edad tiene un efecto positivo significativo sobre la inseguridad general. Cada unidad de aumento en la edad se asocia con un incremento de 0,29 unidades en el componente inseguridad_general.
 
-rph_nivel: Los niveles educativos más altos (rph_nivel2 y rph_nivel3) están asociados con mayor percepción de inseguridad en comparación con el nivel de referencia (nivel 0: "Nunca asistió"). Esto podría reflejar que mayores niveles educativos están relacionados con mayor consciencia sobre los riesgos.
+rph_nivel: Los niveles educativos más altos (rph_nivel2 y rph_nivel3) están asociados con mayor percepción de inseguridad en comparación con el nivel de referencia (nivel 1: "Educación Básica"). Esto podría reflejar que mayores niveles educativos están relacionados con mayor consciencia sobre los riesgos.
 
 rph_nse: Los niveles socioeconómicos más altos (rph_nse2 y rph_nse3) están asociados con una percepción menor de inseguridad, en línea con la hipótesis de que los entornos de mayor NSE suelen ser más seguros o percibidos como tal.
 
-rph_situacion_laboral_a: Las personas empleadas (1) perciben una mayor inseguridad general (coeficiente positivo de 0.4493). Esto podría estar relacionado con su exposición a situaciones de inseguridad al trasladarse o trabajar fuera del hogar.
+rph_situacion_laboral_a: Las personas empleadas (1) perciben una mayor inseguridad general (coeficiente positivo de 0,46). Esto podría estar relacionado con su exposición a situaciones de inseguridad al trasladarse o trabajar fuera del hogar.
 
-rph_nacionalidad2: Las personas con doble nacionalidad o extranjeras tienden a percibir menos inseguridad general.
+rph_nacionalidad2: Las personas con doble nacionalidad o extranjeras tienden a percibir menos inseguridad general (coeficiente negativo de 0,28 unidades).
 
 El resto de las variables no son significativas para precedir variabilidad de componente "inseguridad_general"
 
-```{r regresion-lineal-2}
+```{r regresion-lineal-2, echo=FALSE, warning=FALSE}
 # Modelo para el segundo componente principal: "inseguridad_habituales"
 
-# Este componente refleja inseguridad percibida en contextos privados o habituales, como el hogar o el lugar de trabajo.
+# Como establecimos anteriormente, este componente refleja inseguridad percibida en contextos privados o habituales, como el hogar o el lugar de trabajo.
 
 modelo_cp2 <- lm(
   inseguridad_habituales ~ rph_sexo + rph_edad + rph_nivel + rph_nse + rph_situacion_laboral_a + 
     rph_pertenencia_indigena + rph_nacionalidad + rph_idgen,
   data = data_model
 )
-summary(modelo_cp2)
+
+# Extraemos el resumen del modelo
+summary_modelo_cp2 <- summary(modelo_cp2)
+
+# Convertimos los coeficientes a un data.frame
+summary_table_cp2 <- as.data.frame(summary_modelo_cp2$coefficients)
+
+# Mostramos la tabla con kable
+kable(summary_table_cp2, caption = "Resumen del Modelo CP2")
 ```
 
-rph_edad: Relación negativa significativa (-0.0434). A mayor edad, menor es la percepción de inseguridad en lugares habituales. Esto puede reflejar que personas mayores se sienten más seguras en sus espacios privados.
+Resumen del modelo:
 
-rph_nivel3: Personas con educación superior tienen una percepción significativamente mayor de inseguridad en lugares habituales en comparación con quienes no asistieron a la escuela (coeficiente 0.290).
+rph_edad: Relación negativa significativa (-0,10). A mayor edad, menor es la percepción de inseguridad en lugares habituales. Esto puede reflejar que personas mayores se sienten más seguras en sus espacios privados.
 
-rph_nse: A medida que el nivel socioeconómico aumenta (rph_nse2 y rph_nse3), la percepción de inseguridad habitual también aumenta. Esto puede deberse a que personas de niveles socioeconómicos altos son más conscientes de los riesgos o están expuestas a situaciones específicas que aumentan su percepción de inseguridad.
+rph_nivel3: Personas con educación superior tienen una percepción significativamente mayor de inseguridad en lugares habituales en comparación con quienes tienen estudios básicos (coeficiente 0,23).
 
-rph_situacion_laboral_a1: Las personas empleadas tienen una percepción ligeramente mayor de inseguridad en lugares habituales (coeficiente 0.0393).
+rph_nse: A medida que el nivel socioeconómico aumenta (rph_nse2 y rph_nse3), la percepción de inseguridad habitual también aumenta.
 
-rph_pertenencia_indigena1: Pertenecer a un pueblo indígena se asocia con una menor percepción de inseguridad habitual (-0.0974). Esto podría estar relacionado con diferencias culturales o contextos específicos donde habitan estas personas.
+rph_situacion_laboral_a1: Las personas empleadas tienen una percepción ligeramente mayor de inseguridad en lugares habituales (coeficiente 0,032).
 
-rph_nacionalidad2: Las personas extranjeras o con doble nacionalidad perciben menos inseguridad habitual (-0.1014).
+rph_pertenencia_indigena1: Pertenecer a un pueblo indígena se asocia con una menor percepción de inseguridad habitual (-0,092). Esto podría estar relacionado con diferencias culturales o contextos específicos donde habitan estas personas.
 
-```{r regresion-lineal-3}
+rph_nacionalidad2: Las personas extranjeras o con doble nacionalidad perciben menos inseguridad habitual (-0,097).
+
+Como podemos observar, las relaciones entre nuestras variables independientes respecto al CP 2 se desvían respecto a las relaciones existentes en el primer modelo de regresión. Las personas en espacios privados tienen diferentes razones para sentirse inseguras. Llama la atención que los adultos mayores y las personas pertenecientes a pueblos indígenas se sientan significativamente más seguras en sus espacios de desarrollo habitual que el resto de la población chilena.
+
+```{r regresion-lineal-3, echo=FALSE, warning=FALSE}
 # Modelo para el índice de inseguridad
 # Este modelo analiza cómo las variables sociodemográficas afectan al índice general de inseguridad.
 
@@ -865,32 +901,50 @@ modelo_inseguridad <- lm(
     rph_pertenencia_indigena + rph_nacionalidad + rph_idgen,
   data = data_model
 )
-summary(modelo_inseguridad)
+
+# Extraemos el resumen del modelo
+summary_modelo_inseguridad <- summary(modelo_inseguridad)
+
+# Convertimos los coeficientes a un data.frame
+summary_table_inseguridad <- as.data.frame(summary_modelo_inseguridad$coefficients)
+
+# Mostramos la tabla con kable
+kable(summary_table_inseguridad, caption = "Resumen del Modelo de Inseguridad")
 ```
+
+Resumen del modelo:
 
 rph_edad: A medida que aumenta la edad, también lo hace el índice de inseguridad, lo que indica que las personas mayores perciben más inseguridad en términos generales.
 
 rph_nivel (niveles 1, 2, 3): Las personas con más años de educación tienen una percepción ligeramente mayor de inseguridad.
 
-rph_nse (niveles 2, 3): A medida que aumenta el nivel socioeconómico, el índice de inseguridad tiende a disminuir.  Esto podría reflejar entornos más protegidos o mayor acceso a recursos de seguridad.
+rph_nse (niveles 2, 3): A medida que aumenta el nivel socioeconómico, el índice de inseguridad tiende a disminuir. Esto podría reflejar entornos más protegidos o mayor acceso a recursos de seguridad.
 
 rph_situacion_laboral_a1: Las personas laboralmente activas tienen una percepción ligeramente mayor de inseguridad en comparación con quienes no están empleados.
 
 rph_nacionalidad2: Las personas extranjeras o con doble nacionalidad tienen un índice de inseguridad ligeramente menor en comparación con los chilenos.
 
-```{r regresion-lineal-4}
+```{r regresion-lineal-4, echo=FALSE, warning=FALSE}
 # Modelo para el índice de percepción de delincuencia
-# Este modelo analiza el impacto de las variables sociodemográficas en la percepción de delincuencia.
+# Este modelo analiza el impacto de las variables sociodemográficas en la percepción sobre variación de la delincuencia.
 
 modelo_delincuencia <- lm(
   indice_delincuencia ~ rph_sexo + rph_edad + rph_nivel + rph_nse + rph_situacion_laboral_a + 
     rph_pertenencia_indigena + rph_nacionalidad + rph_idgen,
   data = data_model
 )
-summary(modelo_delincuencia)
+
+# Extraemos el resumen del modelo
+summary_modelo_delincuencia <- summary(modelo_delincuencia)
+
+# Convertimos los coeficientes a un data.frame
+summary_table_delincuencia <- as.data.frame(summary_modelo_delincuencia$coefficients)
+
+# Mostramos la tabla con kable
+kable(summary_table_delincuencia, caption = "Resumen del Modelo de Delincuencia")
 ```
 
-Variables significativas:
+Resumen del modelo:
 
 rph_edad: A medida que aumenta la edad, también lo hace el índice de percepción de delincuencia, lo que indica que las personas mayores perciben mayores niveles de delincuencia.
 
@@ -910,13 +964,14 @@ Estar laboralmente activo también se asocia con percepciones ligeramente más a
 
 Finalmente, las personas con nacionalidad extranjera o doble nacionalidad tienden a percibir menores niveles de inseguridad y delincuencia, lo que podría reflejar diferencias culturales o expectativas distintas en cuanto a la seguridad.
 
+Más allá de lo anterior, es relevante mencionar que la capacidad explicativa de nuestros modelos es bastante baja, variando entre un R² de 2% y 5% y con una cantidad considerable de residuos. Por lo anterior, debemos establecer que parte importante de la variabilidad de nuestros factores a explicar no es capturada por nuestros modelos. Así, más allá de las variables sociodemográficas, existirían otro tipo de variables independientes a partir de las cuales se podría predecir, de manera más completa, nuestro fenómeno de interés.
 
-```{r clustering}
+Creando los clusters
+
+```{r clustering, echo=FALSE, warning=FALSE, results='hide'}
 # 3. Clusterización: Identificación de perfiles
 
-# Seleccionamos las variables principales (componentes e índices) para realizar la clusterización.
-
-# Esto permite identificar patrones y perfiles en los datos basados en la percepción de inseguridad y delincuencia.
+# Seleccionamos las variables (nuestros cuatro componentes principales), para realizar la clusterización. Esto nos permitirá identificar patrones y perfiles en los datos basados en la percepción de inseguridad y delincuencia.
 
 data_clustering <- data_model[, c(
   "inseguridad_general", 
@@ -925,14 +980,15 @@ data_clustering <- data_model[, c(
   "inseguridad_transporte"
 )]
 
-# Aplicamos k-means para agrupar las observaciones en perfiles.
-
-# El número de clusters (centers) se eligió arbitrariamente como 2.
+# Aplicamos k-means para agrupar las observaciones en perfiles. El número de clusters (centers) se eligió arbitrariamente como 2.
 
 # Verificamos si hay valores NA en data_clustering
 
 sum(is.na(data_clustering))
+```
 
+
+```{r clustering-1, echo=FALSE, warning=FALSE}
 # Realizamos clusterización con nuestros datos
 
 data_clustering_scaled <- scale(data_clustering)
@@ -944,6 +1000,7 @@ clusters <- kmeans(data_clustering_scaled, centers = 2, nstart = 25)
 data_model$cluster[complete.cases(data_clustering)] <- clusters$cluster
 
 #Analizamos los estadísticos de los clusters para ver su composición
+
 cluster_summary <- data_model %>%
   group_by(cluster) %>%
   summarise(
@@ -963,7 +1020,7 @@ cluster_summary <- data_model %>%
 
 cluster_summary %>%
   kable(
-    format = "markdown", # Cambiar a "html" o "latex" según necesidad
+    format = "markdown",
     col.names = c(
       "Cluster",
       "Cantidad",
@@ -979,11 +1036,12 @@ cluster_summary %>%
     caption = "Resumen Estadístico de Clústeres"
   )
 ```
-Cluster 1: Según los datos, vemos que el cluster 1 tiene una menor media de inseguridad general que el promedio (-1.446). Respecto a la inseguridad habitual, vemos también que esta es menor al promedio moderadamente (-0.191). Respecto a la espera observamos que tienen una inseguridad moderada respecto a la espera (0.388) y una tasa muy leve de inseguridad respecto al transporte (0.009). El cluster tiene un total de 28.541 observaciones.
 
-Cluster 2: En este cluster vemos una inseguridad general mayor a la media (1.940). Del mismo modo, observamos que su media habitual también es mayor al promedio con un 0.256. No obstante, en la espera tienen una media de inseguridad menor al promedio (-0520)y una leve inseguridad respecto a la media del transporte (-0.012). El cluster tiene un total de 21.272 observaciones.
+Cluster 1: Según los datos, vemos que el cluster 1 tiene una media de inseguridad general negativa, de un -1,45. Respecto a la inseguridad habitual, también esta es negativa, con un valor de -0,191. Respecto a la espera observamos que tienen una inseguridad positiva respecto a la espera (0,387) y una tasa también positiva de inseguridad respecto a la movilización en transporte público (0,014). El cluster tiene un total de 28.020 observaciones.
 
-```{r clustering-visualización}
+Cluster 2: En este cluster vemos una inseguridad general positiva, de 1,95. Del mismo modo, observamos que su media de inseguridad en lugares habituales de desarrollo personal es de 0,26. No obstante, en la espera de transporte público tienen una media de inseguridad negativa de -0,52 y una inseguridad en medios de transporte público también negativa, de un -0,018. El cluster tiene un total de 21.019 observaciones.
+
+```{r clustering-visualización, echo=FALSE, warning=FALSE}
 # Visualizamos los clusters en función de dos componentes principales para observar los patrones.
 
 ggplot(data_model, aes(x = inseguridad_general, y = inseguridad_habituales, color = cluster)) +
@@ -997,10 +1055,11 @@ ggplot(data_model, aes(x = inseguridad_general, y = inseguridad_habituales, colo
   theme_minimal()
 ```
 
-Como podemos observar, la diferencia entre ambos cluster ronda en torno a la inseguridad general. Mientras que el cluster 1 tiene inseguridad más concentrada hacia la percepción de inseguridad en general de manera negativa, el cluster 2 se concentra hacia una media mayor al promedio en lo que respecta a la inseguridad en general. Siendo lo que diferencia a ambos grupos.
+Como podemos observar, la diferencia entre ambos cluster ronda en torno a la inseguridad general. Mientras que el cluster 1 presenta menores niveles de inseguridad general, el cluster 2 representa a personas con mayores niveles de inseguridad. De tal manera, este sería el componente principal clave (la percepción general de inseguridad), a partir del cual es posible diferenciar a ambos grupos.
 
+Se incorporan etiquetas a los clusters, en beneficio de la visualización de nuestros datos:
 
-```{r clustering-2}
+```{r clustering-2, echo=FALSE, warning=FALSE}
 # Nombramos a los clusters
 
 data_model <- data_model %>%
@@ -1011,10 +1070,11 @@ data_model <- data_model %>%
     )
   )
 
-# Revisar la distribución de los clusters
-table(data_model$etiqueta_cluster)
+# Revisamos la distribución de los clusters
 
-# Visualizamos los clusters
+kable(table(data_model$etiqueta_cluster), caption = "Distribución de los clusters")
+
+# Visualización gráfica final de los clusters
 
 ggplot(data_model, aes(x = inseguridad_general, y = inseguridad_habituales, color = etiqueta_cluster)) +
   geom_point(alpha = 0.6) +
@@ -1022,13 +1082,16 @@ ggplot(data_model, aes(x = inseguridad_general, y = inseguridad_habituales, colo
     title = "Clusters basados en Componentes Principales",
     x = "Inseguridad General", 
     y = "Inseguridad en Lugares Habituales", 
-    color = "Etiqueta del Cluster"
+    color = "Cluster"
   ) +
   theme_minimal()
 
 ```
 
-```{r cluster-densidad}
+Presentamos un gráfico de densidad de nuestros clusters
+
+```{r cluster-grafico-densidad, echo=FALSE, warning=FALSE}
+
 ggplot(data_model, aes(x = inseguridad_general, fill = etiqueta_cluster)) +
   geom_density(alpha = 0.5) +
   labs(
@@ -1041,8 +1104,12 @@ ggplot(data_model, aes(x = inseguridad_general, fill = etiqueta_cluster)) +
 
 ```
 
-```{r cluster-caracterizacion}
+Caracterizando a nuestros conglomerados
+
+```{r cluster-caracterizacion, echo=FALSE, warning=FALSE}
+
 # Generamos la caracterización de los clusters
+
 caracterizacion_clusters <- data_model %>%
   group_by(etiqueta_cluster) %>%
   summarise(
@@ -1053,11 +1120,11 @@ caracterizacion_clusters <- data_model %>%
     nivel_educacional_basica = mean(rph_nivel == 1, na.rm = TRUE) * 100,
     nivel_educacional_media = mean(rph_nivel == 2, na.rm = TRUE) * 100,
     nivel_educacional_superior = mean(rph_nivel == 3, na.rm = TRUE) * 100,
-    sin_asistencia_educacional = mean(rph_nivel == 0, na.rm = TRUE) * 100,
     nse_bajo = mean(rph_nse == 1, na.rm = TRUE) * 100,
     nse_medio = mean(rph_nse == 2, na.rm = TRUE) * 100,
     nse_alto = mean(rph_nse == 3, na.rm = TRUE) * 100,
     activos_laboralmente = mean(rph_situacion_laboral_a == 1, na.rm = TRUE) * 100,
+    inactivos_laboralmente = mean(rph_situacion_laboral_a == 0, na.rm = TRUE) * 100,
     pertenencia_indigena = mean(rph_pertenencia_indigena == 1, na.rm = TRUE) * 100,
     no_indigenas = mean(rph_pertenencia_indigena == 0, na.rm = TRUE) * 100,
     chilenos = mean(rph_nacionalidad == 1, na.rm = TRUE) * 100,
@@ -1069,16 +1136,19 @@ caracterizacion_clusters <- data_model %>%
 kable(caracterizacion_clusters, 
       col.names = c("Cluster", "Número de Observaciones", "Edad Promedio", 
                     "Hombres (%)", "Mujeres (%)", "Educación Básica (%)", 
-                    "Educación Media (%)", "Educación Superior (%)", 
-                    "Sin Asistencia Educacional (%)", "NSE Bajo (%)", 
-                    "NSE Medio (%)", "NSE Alto (%)", "Activos Laboralmente (%)", 
+                    "Educación Media (%)", "Educación Superior (%)", "NSE Bajo (%)", 
+                    "NSE Medio (%)", "NSE Alto (%)", "Activos Laboralmente (%)","Inactivos Laboralmente",
                     "Pertenencia Indígena (%)", "No Indígenas (%)", 
                     "Chilenos (%)", "Extranjeros (%)"),
       caption = "Caracterización de los Clústeres") 
 ```
 
-```{r cluster-nse}
-#Hacemos un resumen en torno a nivel-socioeconomico
+### Cruce de clusters con variables sociodemográficas seleccionadas
+
+En base a los resultados arrojados por los modelos de regresión lineal múltiple, por caracterizar los clusters en base a nuestras variables más significativas: 1) Nivel socioeconómico, 2) Edad, 3) Sexo, 4) Condición laboral
+
+```{r cluster-nse, echo=FALSE, warning=FALSE}
+# Hacemos un resumen en torno a nivel socioeconómico
 
 resumen_inseguridad_nse_cluster <- data_model %>%
   group_by(etiqueta_cluster, rph_nse) %>%
@@ -1098,25 +1168,189 @@ kable(resumen_inseguridad_nse_cluster,
 
 ```
 
-```{r cluster-nse-grafico}
-# Calcular los promedios de inseguridad general por NSE y cluster
+```{r cluster-nse-grafico, echo=FALSE, warning=FALSE}
+# Calculamos los promedios de inseguridad general por NSE y cluster
+
 promedios_nse_cluster <- data_model %>%
   group_by(etiqueta_cluster, rph_nse) %>%
   summarise(promedio_inseguridad_general = mean(inseguridad_general, na.rm = TRUE), .groups = "drop")
 
-# Graficar los resultados
+# Graficamos los resultados
+
 ggplot(promedios_nse_cluster, aes(x = as.factor(rph_nse), y = promedio_inseguridad_general, fill = etiqueta_cluster)) +
   geom_bar(stat = "identity", position = "dodge") +
+  geom_text(
+    aes(label = round(promedio_inseguridad_general, 2)), 
+    position = position_dodge(width = 0.9), 
+    vjust = ifelse(promedios_nse_cluster$promedio_inseguridad_general > 0, -0.5, 1.5), 
+    size = 3.5
+  ) +
   labs(
-    title = "Promedio de Inseguridad General por NSE y Cluster",
-    x = "Nivel Socioeconómico (NSE)",
+    title = "Promedio de Inseguridad General por Nivel Socioeconómico y Cluster",
+    x = "Nivel Socioeconómico (1 = Bajo, 2 = Medio, 3 = Alto)",
     y = "Promedio de Inseguridad General",
     fill = "Cluster"
   ) +
+  scale_fill_manual(values = c("#F8766D", "#00BFC4")) +
   theme_minimal()
 
 ```
 
-```{r}
+Como podemos observar, el nivel socioeconómico posee una relación relativamente lineal respecto al nivel de inseguridad. A mayor NSE, menores niveles de inseguridad.
+
+Como vemos en el cluster 1, el NSE bajo es el que posee un menor nivel de seguridad, el NSE medio registra mayores niveles de seguridad y el NSE 3 (o "alto"), posee la más alta tasa de seguridad. Análogamente, al analizar el cluster dos, vemos que el grupo con mayores niveles de inseguridad es el grupo socioeconómico bajo (1), seguido por la categoría que representa al NSE medio, mientras que el grupo socioeconómico con menores niveles de inseguridad es el representado por la categoría 3, o Nivel Socioeconómico alto.
+
+```{r cluster-edad, echo=FALSE, warning=FALSE}
+# Resumen por edad y cluster
+
+resumen_inseguridad_edad_cluster <- data_model %>%
+  group_by(etiqueta_cluster, rph_edad) %>%
+  summarise(
+    promedio_inseguridad_general = mean(inseguridad_general, na.rm = TRUE),
+    promedio_inseguridad_habituales = mean(inseguridad_habituales, na.rm = TRUE),
+    .groups = "drop"
+  )
+
+# Tabla de resultados
+
+kable(resumen_inseguridad_edad_cluster, 
+      col.names = c("Cluster", "Edad (Categorías)", "Promedio Inseguridad General", 
+                    "Promedio Inseguridad Habituales"),
+      caption = "Resumen de Inseguridad por Cluster y Edad")
+
+
+```
+
+```{r cluster-edad-grafico, echo=FALSE, warning=FALSE}
+
+# Promedio de inseguridad general por edad y cluster
+promedios_edad_cluster <- data_model %>%
+  group_by(etiqueta_cluster, rph_edad) %>%
+  summarise(promedio_inseguridad_general = mean(inseguridad_general, na.rm = TRUE), .groups = "drop")
+
+
+# Gráfico de barras para inseguridad general por edad y cluster
+
+ggplot(promedios_edad_cluster, aes(x = as.factor(rph_edad), y = promedio_inseguridad_general, fill = etiqueta_cluster)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = round(promedio_inseguridad_general, 2)), 
+            position = position_dodge(width = 0.9), 
+            vjust = ifelse(promedios_edad_cluster$promedio_inseguridad_general > 0, -0.5, 1.5), 
+            size = 3.5) +
+  labs(
+    title = "Promedio de Inseguridad General por Edad y Cluster",
+    x = "Edad (1 = Joven, 2 = Adulto, 3 = Adulto Mayor)",
+    y = "Promedio de Inseguridad General",
+    fill = "Cluster"
+  ) +
+  scale_fill_manual(values = c("#F8766D", "#00BFC4")) +
+  theme_minimal()
+
+
+
+
+```
+
+Como podemos observar, las personas más jóvenes (categoría 1) tienen los niveles de inseguridad más bajos dentro del cluster 1 (Baja Inseguridad General), con un promedio de -1,74.Conforme aumenta la edad (categorías 2 y 3), se incrementa ligeramente la percepción de inseguridad, alcanzando un promedio de -1.16 en la categoría 3.
+
+Respecto al Cluster 2 (Alta inseguridad general), las personas de edad intermedia (categoría 2) presentan los niveles más altos de inseguridad general, con un promedio de 2.16. Las personas más jóvenes (categoría 1) y las más mayores (categoría 3) tienen niveles ligeramente más bajos de inseguridad dentro de este cluster, con promedios de 1.68 y 1.74, respectivamente.
+
+Estos resultados sugieren que la percepción de inseguridad puede estar influenciada por la edad, con patrones distintos dependiendo del grupo al que pertenecen las personas.
+
+```{r cluster-sexo, echo=FALSE, warning=FALSE}
+# Verificamos proporción de sexo por cluster
+proporciones_sexo_cluster <- data_model %>%
+  group_by(etiqueta_cluster, rph_sexo) %>%
+  summarise(cantidad = n(), .groups = "drop") %>%
+  group_by(etiqueta_cluster) %>%
+  mutate(proporcion = cantidad / sum(cantidad) * 100)
+
+# Mostrar la tabla
+kable(proporciones_sexo_cluster, 
+      col.names = c("Cluster", "Sexo (1 = Hombre, 2 = Mujer)", "Cantidad", "Proporción (%)"),
+      caption = "Proporción de Observaciones por Sexo y Cluster")
+
+```
+
+```{r cluster-sexo-grafico, echo=FALSE, warning=FALSE}
+# Calcular los promedios de inseguridad general por sexo y cluster
+promedio_inseguridad_sexo_cluster <- data_model %>%
+  group_by(etiqueta_cluster, rph_sexo) %>%
+  summarise(promedio_inseguridad_general = mean(inseguridad_general, na.rm = TRUE), .groups = "drop")
+
+# Gráfico de barras
+
+ggplot(promedio_inseguridad_sexo_cluster, aes(x = as.factor(rph_sexo), y = promedio_inseguridad_general, fill = etiqueta_cluster)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  geom_text(aes(label = round(promedio_inseguridad_general, 2)), 
+            position = position_dodge(width = 0.9), 
+            vjust = ifelse(promedio_inseguridad_sexo_cluster$promedio_inseguridad_general > 0, -0.5, 1.5), 
+            size = 3.5) +
+  labs(
+    title = "Promedio de Inseguridad General por Sexo y Cluster",
+    x = "Sexo (1 = Hombre, 2 = Mujer)",
+    y = "Promedio de Inseguridad General",
+    fill = "Cluster"
+  ) +
+  scale_fill_manual(values = c("#F8766D", "#00BFC4")) +
+  theme_minimal()
+```
+
+El gráfico evidencia claramente que las mujeres, en promedio, tienen menores niveles de seguridad y mayores niveles de inseguridad en comparación con los hombres en ambos clusters. La distribución y proporción de sexo en los clusters confirma la hipótesis de que las mujeres experimentan mayores niveles de inseguridad en comparación con los hombres. Esto se refleja de manera consistente tanto en las proporciones de observaciones como en los promedios de inseguridad general por sexo.
+
+```{r cluster-actividad-laboral, echo=FALSE, warning=FALSE}
+# Proporciones de activos e inactivos laboralmente por cluster
+proporciones_laborales_cluster <- data_model %>%
+  group_by(etiqueta_cluster, rph_situacion_laboral_a) %>%
+  summarise(
+    cantidad = n(),
+    .groups = "drop"
+  ) %>%
+  group_by(etiqueta_cluster) %>%
+  mutate(
+    proporcion = cantidad / sum(cantidad) * 100,
+    rph_situacion_laboral_a = recode(rph_situacion_laboral_a, 
+                                     `1` = "Activos Laboralmente",
+                                     `0` = "Inactivos Laboralmente")
+  )
+```
+
+#Graficamos la composición de nuestros clusters según la situación laboral de las personas entrevistadas
+
+```{r cluster-actividad-laboral-grafico, echo=FALSE, warning=FALSE}
+ggplot(proporciones_laborales_cluster, aes(x = etiqueta_cluster, y = proporcion, fill = rph_situacion_laboral_a)) +
+  geom_bar(stat = "identity", position = "fill") +
+  geom_text(aes(label = scales::percent(proporcion / 100, accuracy = 0.1)), position = position_fill(vjust = 0.5), size = 3.5) +
+  labs(
+    title = "Activos Vs. Inactivos Laboralmente por Cluster",
+    x = "Clusters",
+    y = "Porcentaje (%)",
+    fill = "Condición Laboral"
+  ) +
+  scale_fill_manual(values = c("#F8766D", "#00BFC4")) +
+  scale_y_continuous(labels = scales::percent_format(scale = 100)) +
+  theme_minimal()
+
+```
+
+Finalmente, respecto a la variación de percepción de inseguridad según su actividad laboral, podemos establecer que Las personas activas laboralmente perciben y manifiestan mayores niveles de inseguridad en comparación con las inactivas. Esto se evidencia porque una proporción significativa de personas activas laboralmente está presente en el Cluster 2, que representa alta inseguridad.
+
+En contraste, las personas inactivas laboralmente tienden a percibir menor inseguridad, lo que explica su mayor presencia proporcional en el Cluster 1 (Baja Inseguridad General).
+
+De tal manera, las personas activas laboralmente pueden estar más expuestas a factores que aumentan su percepción de inseguridad, como desplazamientos diarios, interacción en entornos públicos y horarios variados, lo que incrementa la probabilidad de enfrentar situaciones riesgosas.Por su parte, las personas inactivas laboralmente, al pasar más tiempo en entornos privados o controlados, podrían estar menos expuestas a situaciones de inseguridad, lo que reduce su percepción del riesgo.
+
+# Conclusiones
+
+A partir de los resultados obtenidos en el presente trabajo, podemos establecer que no es posible segmentar a la población chilena de forma clara según su percepción de inseguridad declarada. Si bien el análisis de clusters permitió identificar dos grandes conglomerados (uno con mayores niveles de inseguridad y otro con menores niveles), estos grupos se traslapan entre sí, lo que evidencia un bajo nivel de diferenciación entre ellos.
+
+Más allá de lo anterior, y respecto a los dos conglomerados a partir de los que se determinó continuar con la investigación, podemos indicar que el cluster 1, que representa un nivel menor de inseguridad que el promedio, se asocia con grupos conformados por hombres, con individuos que pertenecen al nivel socioeconómico alto, con grupos etarios jóvenes y sin actividad laboral, entre otras características diferenciadoras a nivel sociodemográfico.
+
+En contraste, el cluster 2, que representa niveles de percepción de inseguridad más altos que el promedio de nuestra sociedad, se relaciona mayormente con mujeres, con individuos pertenencientes a los niveles socioeconómicos bajos y medios, con personas que se encuentran trabajando y con grupos etarios medios y avanzados de la población.
+
+Este hallazgo, consistente con la literatura sobre el fenómeno, refuerza la idea de que la inseguridad es un fenómeno transversal, aunque no homogéneo, en la sociedad chilena. Es decir, afecta a toda la población, aunque ciertos grupos experimentan niveles ligeramente mayores o menores. Las diferencias intra-grupales identificadas, aunque estadísticamente significativas (por ejemplo, según edad, sexo, nacionalidad, NSE, etc.), no son lo suficientemente marcadas como para definir perfiles claramente distinguibles dentro de la sociedad.
+
+De esta manera, la percepción de inseguridad puede considerarse como una preocupación social que impacta de manera generalizada la calidad de vida en el país, alcanzando niveles medio-altos en promedio. Este resultado sugiere que las políticas públicas deben abordar el problema desde una perspectiva amplia y universal, pero con enfoques diferenciados y planes de acción específicos, para atender las necesidades y requerimientos de los grupos más afectados, como lo son las mujeres, las personas mayores, los individuos de menor nivel socioeconómico, los trabajadores activos, entre otros segmentos de la población, que sufren mayormente las consecuencias, ya sean materiales o inmateriales, del fenómeno delictivo y de otros fenómenos relacionados que afectan el bienestar de nuestra sociedad.
+
+```{r, results='hide', echo=FALSE, warning=FALSE}
 renv::snapshot()
 ```
